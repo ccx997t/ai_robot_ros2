@@ -1,0 +1,7 @@
+/**:
+  ros__parameters:
+    use_sim_time: false
+    mode: sim
+    command_timeout_seconds: 0.5
+    max_linear_speed_mps: 0.3
+    max_angular_speed_rps: 0.8
