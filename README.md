@@ -23,7 +23,7 @@ bash scripts/test.sh
 | 软件包 | 语言 | 职责 |
 |---|---|---|
 | `ai_robot_base` | C++ | 最小底盘状态节点与命令看门狗逻辑 |
-| `ai_robot_tools` | Python | 最小诊断心跳节点 |
+| `ai_robot_tools` | Python | 发布标准 `/diagnostics` 的最小健康节点 |
 | `ai_robot_bringup` | Launch | 统一 `mode:=sim|real` 启动入口 |
 
-架构见 [docs/architecture/architecture_baseline.md](docs/architecture/architecture_baseline.md)。实体硬件、仿真、传感器、导航与 AI 均未实现。
+架构见 [docs/architecture/architecture_baseline.md](docs/architecture/architecture_baseline.md)，公共接口与TF规则分别见 [interface_baseline.md](docs/architecture/interface_baseline.md) 和 [tf_baseline.md](docs/architecture/tf_baseline.md)。实体硬件、仿真本体、传感器、导航与 AI 均未实现。

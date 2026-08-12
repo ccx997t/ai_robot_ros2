@@ -1,0 +1,4 @@
+/**:
+  ros__parameters:
+    mode: real
+    use_sim_time: false

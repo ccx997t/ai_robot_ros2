@@ -54,7 +54,13 @@ class WorkspaceContractTest(unittest.TestCase):
                 keyword.value for keyword in node.keywords
                 if keyword.arg == 'parameters'
             )
-            self.assertIn("'mode': mode", ast.unparse(parameters))
+            self.assertEqual('[parameters]', ast.unparse(parameters))
+
+    def test_sim_time_is_derived_from_mode(self):
+        source = ast.unparse(self.launch_tree)
+        self.assertIn("'mode': mode", source)
+        self.assertIn("'use_sim_time': use_sim_time", source)
+        self.assertIn("value_type=bool", source)
 
 
 if __name__ == '__main__':

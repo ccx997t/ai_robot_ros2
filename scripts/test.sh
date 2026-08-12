@@ -11,4 +11,3 @@ source install/setup.bash
 set -u
 colcon test --event-handlers console_direct+
 colcon test-result --verbose
-python3 -m unittest discover -s src/ai_robot_tools/test -p 'test_*.py' -v

@@ -1,11 +1,20 @@
-# 对象—资源—实现—测试矩阵（S1-M1 待完善）
+# 对象—资源—实现—测试矩阵
 
-| 对象 | 候选资源 | 仿真实现 | 实体实现 | 独立测试 | 状态 |
-|---|---|---|---|---|---|
-| 机器人模型 | URDF/Xacro | 待选 | 不适用 | TF 检查 | 预留 |
-| 差速底盘 | ros2_control | 待选 | MCU 接口 | `/cmd_vel`、`/odom` | 预留 |
-| 雷达 | 品牌驱动 | 待选 | 待选 | `/scan` | 预留 |
-| 相机 | image_pipeline | 待选 | 待选 | 图像契约 | 预留 |
-| IMU | robot_localization | 待选 | 待选 | `/imu/data` | 预留 |
-| SLAM | slam_toolbox | 待选 | 复用 | 建图场景 | 预留 |
-| 导航 | Nav2 / AMCL | 待选 | 复用 | 到点与取消 | 预留 |
+本矩阵冻结 S1-M1 的候选资源、公共接口和准入状态。标记为“候选”的资源尚未进入功能实现，不代表后续里程碑通过。
+
+| 对象 | 选定/候选资源 | 仿真实现 | 实体实现 | 公共接口或输出 | 独立验证 | S1-M1 状态 |
+|---|---|---|---|---|---|---|
+| 仿真平台 | Gazebo Fortress 6.18.0、`ros_gz` 0.244.25 | `ros_gz_sim` | 不适用 | `/clock`及显式桥接接口 | GUI、Transport、`/clock`桥接 | 已准入 |
+| 机器人模型 | URDF、Xacro 2.1.1、`robot_state_publisher` 3.0.3 | 共用描述包 | 共用描述包 | `/robot_description`、`/tf`、`/tf_static` | Xacro解析和TF契约 | 基础资源已准入，M2实现 |
+| 坐标变换 | TF2 0.25.20 | 仿真驱动提供动态TF | 实体驱动提供动态TF | `map -> odom -> base_link -> sensor_link` | Frame、频率、时间戳检查 | 已准入 |
+| 差速底盘 | `ros2_control`、`diff_drive_controller` | Gazebo控制插件 | MCU硬件接口 | `/cmd_vel`、`/odom`、TF | 超时、限速、方向和里程计 | 候选，M2前最小验证 |
+| 安全与诊断 | `diagnostic_msgs`，后续评估 `diagnostic_updater` | 共用监督逻辑 | 共用监督逻辑与硬件状态 | `/diagnostics` | 消息、频率、状态和值字段 | 标准消息已准入 |
+| 激光雷达 | Gazebo传感器、品牌驱动待选 | Gazebo雷达 | 品牌驱动/适配节点 | `/scan` | 类型、QoS、频率、Frame | 候选，M3前准入 |
+| 相机 | Gazebo传感器、`image_transport`，`image_pipeline`待验证 | Gazebo相机 | 品牌驱动/适配节点 | `/camera/*` | 图像、CameraInfo、频率、时间戳 | 部分准入，M3前补齐 |
+| IMU与融合 | Gazebo IMU、`robot_localization`候选 | Gazebo IMU | 品牌IMU/适配节点 | `/imu/data`、融合里程计 | 协方差、频率、Frame、异常输入 | 候选，M3/M4前准入 |
+| SLAM | `slam_toolbox`候选 | 复用标准接口 | 复用标准接口 | 地图及定位相关标准接口 | 固定数据集建图与重载 | 候选，M5前准入 |
+| 导航 | Nav2、AMCL候选 | 复用标准接口 | 复用标准接口 | Nav2 Action、路径和状态 | 到点、取消、超时和不可达 | 候选，M5前准入 |
+| 数据证据 | rosbag2 0.15.16 | 共用 | 共用 | 记录选定Topic | 记录、信息检查、回放 | 已准入 |
+| Launch测试 | `launch_testing` 1.0.14 | 共用 | 共用 | 节点图和接口断言 | `colcon test` | 已准入 |
+
+所有版本以资源卡或目标机 `dpkg-query` 证据为准。第三方资源不得直接修改源码；候选转为“已准入”前必须补充兼容性、许可证、最小验证和回退记录。
