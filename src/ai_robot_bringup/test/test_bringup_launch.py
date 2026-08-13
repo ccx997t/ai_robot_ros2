@@ -19,7 +19,7 @@ def generate_test_description():
     launch_file = os.path.join(
         get_package_share_directory('ai_robot_bringup'),
         'launch',
-        'sim_bringup.launch.py',
+        'm4_bringup.launch.py',
     )
     bringup = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(launch_file),
