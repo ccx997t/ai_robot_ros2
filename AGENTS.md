@@ -1,6 +1,6 @@
 # AI Robot ROS 2 协作规则
 
-- 当前实施 S1-M2：仿真本体与底盘单元；目录占位不等于后续里程碑验收通过。
+- S1-M2已验收，当前实施S1-M3：仿真传感器单元；目录占位或依赖安装不等于传感器验收通过。
 - 不实现 AI Agent、自然语言、模型调用或 AI—ROS 2 桥接。
 - 坐标树目标：`map -> odom -> base_link -> sensor_link`。
 - 预留公共接口：`/cmd_vel`、`/odom`、`/scan`、`/imu/data`、`/diagnostics`。

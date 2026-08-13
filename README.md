@@ -1,6 +1,6 @@
 # AI Robot ROS 2
 
-基于 ROS 2 Humble 的非 AI 机器人软件工作区。S1-M0 工程与管理基线、S1-M1 资源接口与测试基线已经验收，当前实施范围为 **S1-M2：仿真本体与底盘单元**；后续目录仅为规划预留，不代表相应能力已实现或验收。
+基于 ROS 2 Humble 的非 AI 机器人软件工作区。S1-M0至S1-M2已经验收，当前实施范围为 **S1-M3：仿真传感器单元**；后续目录仅为规划预留，不代表相应能力已实现或验收。
 
 ## 快速开始
 
@@ -41,4 +41,4 @@ bash scripts/test.sh
 | `ai_robot_tools` | Python | 发布标准 `/diagnostics` 的最小健康节点 |
 | `ai_robot_bringup` | Launch | 统一 `mode:=sim|real` 启动入口 |
 
-架构见 [docs/architecture/architecture_baseline.md](docs/architecture/architecture_baseline.md)，公共接口与TF规则分别见 [interface_baseline.md](docs/architecture/interface_baseline.md) 和 [tf_baseline.md](docs/architecture/tf_baseline.md)。实体硬件、传感器、导航与 AI 均未实现。
+架构见 [docs/architecture/architecture_baseline.md](docs/architecture/architecture_baseline.md)，公共接口与TF规则分别见 [interface_baseline.md](docs/architecture/interface_baseline.md) 和 [tf_baseline.md](docs/architecture/tf_baseline.md)。实体硬件、导航与 AI 均未实现；仿真传感器正在S1-M3实施。
