@@ -1,0 +1,57 @@
+from pathlib import Path
+
+from ament_index_python.packages import get_package_share_directory
+from launch import LaunchDescription
+from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription, RegisterEventHandler
+from launch.event_handlers import OnProcessExit
+from launch.launch_description_sources import PythonLaunchDescriptionSource
+from launch.substitutions import Command, LaunchConfiguration
+from launch_ros.actions import Node
+from launch_ros.parameter_descriptions import ParameterValue
+
+
+def generate_launch_description():
+    sim_share = Path(get_package_share_directory('ai_robot_sim'))
+    description_share = Path(get_package_share_directory('ai_robot_description'))
+    ros_gz_share = Path(get_package_share_directory('ros_gz_sim'))
+    controllers = sim_share / 'config' / 'controllers.yaml'
+    model = description_share / 'urdf' / 'ai_robot.urdf.xacro'
+    world = sim_share / 'worlds' / 'm2_test.sdf'
+    use_sim_time = LaunchConfiguration('use_sim_time')
+
+    robot_description = ParameterValue(
+        Command(['xacro ', str(model), ' controllers_file:=', str(controllers)]),
+        value_type=str,
+    )
+    gazebo = IncludeLaunchDescription(
+        PythonLaunchDescriptionSource(str(ros_gz_share / 'launch' / 'gz_sim.launch.py')),
+        launch_arguments={'gz_args': ['-r -s ', str(world)]}.items(),
+    )
+    state_publisher = Node(
+        package='robot_state_publisher', executable='robot_state_publisher',
+        parameters=[{'robot_description': robot_description, 'use_sim_time': use_sim_time}],
+        output='screen',
+    )
+    spawn_robot = Node(
+        package='ros_gz_sim', executable='create',
+        arguments=['-name', 'ai_robot', '-topic', 'robot_description', '-z', '0.02'],
+        output='screen',
+    )
+    joint_state_spawner = Node(
+        package='controller_manager', executable='spawner',
+        arguments=['joint_state_broadcaster', '--controller-manager', '/controller_manager'],
+        output='screen',
+    )
+    base_spawner = Node(
+        package='controller_manager', executable='spawner',
+        arguments=['base_controller', '--controller-manager', '/controller_manager'],
+        output='screen',
+    )
+
+    load_controllers = RegisterEventHandler(
+        OnProcessExit(target_action=spawn_robot, on_exit=[joint_state_spawner, base_spawner])
+    )
+    return LaunchDescription([
+        DeclareLaunchArgument('use_sim_time', default_value='true', choices=['true', 'false']),
+        gazebo, state_publisher, spawn_robot, load_controllers,
+    ])
