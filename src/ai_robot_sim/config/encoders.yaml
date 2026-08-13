@@ -1,0 +1,12 @@
+encoder:
+  topic: /joint_states
+  message_type: sensor_msgs/msg/JointState
+  left_joint: left_wheel_joint
+  right_joint: right_wheel_joint
+  position_unit: rad
+  velocity_unit: rad/s
+  update_rate: 100.0
+  ticks_per_revolution: 2048
+  radians_per_tick: 0.0030679615757712823
+  simulated_continuous_position: true
+

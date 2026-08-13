@@ -18,9 +18,17 @@ def generate_launch_description():
     model = description_share / 'urdf' / 'ai_robot.urdf.xacro'
     world = sim_share / 'worlds' / 'm2_test.sdf'
     use_sim_time = LaunchConfiguration('use_sim_time')
+    enable_lidar = LaunchConfiguration('enable_lidar')
+    enable_camera = LaunchConfiguration('enable_camera')
+    enable_imu = LaunchConfiguration('enable_imu')
 
     robot_description = ParameterValue(
-        Command(['xacro ', str(model), ' controllers_file:=', str(controllers)]),
+        Command([
+            'xacro ', str(model), ' controllers_file:=', str(controllers),
+            ' enable_lidar:=', enable_lidar,
+            ' enable_camera:=', enable_camera,
+            ' enable_imu:=', enable_imu,
+        ]),
         value_type=str,
     )
     gazebo = IncludeLaunchDescription(
@@ -53,5 +61,8 @@ def generate_launch_description():
     )
     return LaunchDescription([
         DeclareLaunchArgument('use_sim_time', default_value='true', choices=['true', 'false']),
+        DeclareLaunchArgument('enable_lidar', default_value='false', choices=['true', 'false']),
+        DeclareLaunchArgument('enable_camera', default_value='false', choices=['true', 'false']),
+        DeclareLaunchArgument('enable_imu', default_value='false', choices=['true', 'false']),
         gazebo, state_publisher, spawn_robot, load_controllers,
     ])

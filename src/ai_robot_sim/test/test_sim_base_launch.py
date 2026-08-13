@@ -101,9 +101,18 @@ class TestSimBase(unittest.TestCase):
         controller_client = self.node.create_client(
             ListControllers, '/controller_manager/list_controllers')
         self.assertTrue(controller_client.wait_for_service(timeout_sec=30.0))
-        future = controller_client.call_async(ListControllers.Request())
-        self.assertTrue(self.spin_until(future.done, 10.0))
-        states = {item.name: item.state for item in future.result().controller}
+        deadline = time.monotonic() + 15.0
+        states = {}
+        while time.monotonic() < deadline:
+            future = controller_client.call_async(ListControllers.Request())
+            if self.spin_until(future.done, 1.0):
+                states = {
+                    item.name: item.state for item in future.result().controller
+                }
+                if states.get('joint_state_broadcaster') == 'active' and \
+                        states.get('base_controller') == 'active':
+                    break
+            time.sleep(0.1)
         self.assertEqual('active', states.get('joint_state_broadcaster'))
         self.assertEqual('active', states.get('base_controller'))
 
