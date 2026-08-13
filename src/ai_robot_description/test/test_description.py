@@ -17,10 +17,33 @@ def test_model_has_required_links_and_joints():
     joints = {element.attrib['name']: element for element in robot.findall('joint')}
 
     assert {'base_footprint', 'base_link', 'left_wheel_link', 'right_wheel_link',
-            'caster_link', 'sensor_link'} <= links
+            'caster_link', 'sensor_link', 'laser_link', 'camera_link',
+            'camera_optical_link', 'imu_link'} <= links
     assert joints['left_wheel_joint'].attrib['type'] == 'continuous'
     assert joints['right_wheel_joint'].attrib['type'] == 'continuous'
     assert joints['sensor_joint'].find('parent').attrib['link'] == 'base_link'
+
+
+def test_sensor_extrinsics_and_parentage_are_frozen():
+    robot = expanded_robot()
+    joints = {element.attrib['name']: element for element in robot.findall('joint')}
+    expected = {
+        'sensor_joint': ('base_link', 'sensor_link', '0.10 0 0.10', None),
+        'laser_joint': ('sensor_link', 'laser_link', '0 0 0.06', '0 0 0'),
+        'camera_joint': ('sensor_link', 'camera_link', '0.08 0 0.02', '0 0 0'),
+        'camera_optical_joint': (
+            'camera_link', 'camera_optical_link', '0 0 0',
+            '-1.57079632679 0 -1.57079632679'),
+        'imu_joint': ('sensor_link', 'imu_link', '0 0 0', '0 0 0'),
+    }
+    for name, (parent, child, xyz, rpy) in expected.items():
+        joint = joints[name]
+        assert joint.attrib['type'] == 'fixed'
+        assert joint.find('parent').attrib['link'] == parent
+        assert joint.find('child').attrib['link'] == child
+        assert joint.find('origin').attrib['xyz'] == xyz
+        if rpy is not None:
+            assert joint.find('origin').attrib['rpy'] == rpy
 
 
 def test_physical_links_have_positive_mass_and_collision():

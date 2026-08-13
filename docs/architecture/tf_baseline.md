@@ -6,7 +6,17 @@
 map -> odom -> base_link -> sensor_link
 ```
 
-实际传感器使用语义明确的子Frame，例如`laser_link`、`camera_link`和`imu_link`；`sensor_link`表示规范中的抽象占位，不要求运行时发布同名Frame。
+实际传感器使用语义明确的子Frame：`laser_link`、`camera_link`、`camera_optical_link`和`imu_link`。`sensor_link`是统一安装基准，运行时由机器人描述发布。
+
+S1-M3冻结的仿真外参如下，平移单位为米、旋转为RPY弧度：
+
+| 父Frame | 子Frame | xyz | rpy | 约定 |
+|---|---|---|---|---|
+| `base_link` | `sensor_link` | `0.10 0 0.10` | `0 0 0` | 统一安装基准 |
+| `sensor_link` | `laser_link` | `0 0 0.06` | `0 0 0` | x前、y左、z上 |
+| `sensor_link` | `camera_link` | `0.08 0 0.02` | `0 0 0` | 相机机身Frame |
+| `camera_link` | `camera_optical_link` | `0 0 0` | `-π/2 0 -π/2` | z前、x右、y下 |
+| `sensor_link` | `imu_link` | `0 0 0` | `0 0 0` | x前、y左、z上 |
 
 ## 发布责任
 
@@ -14,7 +24,7 @@ map -> odom -> base_link -> sensor_link
 |---|---|---|---|---|
 | `map -> odom` | 动态 | SLAM或定位组件二选一 | 由定位资源冻结，目标≥10 Hz | 位姿估计时间 |
 | `odom -> base_link` | 动态 | 底盘里程计或融合节点二选一 | 目标≥20 Hz | 里程计采样/融合时间 |
-| `base_link -> sensor_link` | 静态 | 机器人描述与`robot_state_publisher` | 启动时发布并保持 | 静态变换 |
+| `base_link -> sensor_link -> {laser_link, camera_link, imu_link}` | 静态 | 机器人描述与`robot_state_publisher` | 启动时发布并保持 | 静态变换 |
 
 同一变换禁止多个发布者同时竞争。仿真与实体必须保持相同父子关系和轴向定义，只允许标定数值、噪声和发布实现不同。
 

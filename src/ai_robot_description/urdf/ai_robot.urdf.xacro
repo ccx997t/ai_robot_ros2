@@ -77,10 +77,32 @@
     <parent link="base_link"/><child link="caster_link"/><origin xyz="-0.15 0 -0.04"/>
   </joint>
 
-  <!-- M2 reserves one generic sensor mounting frame; sensors are introduced in M3. -->
+  <!-- Generic sensor mounting datum retained as the parent of M3 sensor frames. -->
   <link name="sensor_link"/>
   <joint name="sensor_joint" type="fixed">
     <parent link="base_link"/><child link="sensor_link"/><origin xyz="0.10 0 0.10"/>
+  </joint>
+
+  <!-- M3 frozen simulated sensor extrinsics; REP-103 body axes: x forward, y left, z up. -->
+  <link name="laser_link"/>
+  <joint name="laser_joint" type="fixed">
+    <parent link="sensor_link"/><child link="laser_link"/><origin xyz="0 0 0.06" rpy="0 0 0"/>
+  </joint>
+
+  <link name="camera_link"/>
+  <joint name="camera_joint" type="fixed">
+    <parent link="sensor_link"/><child link="camera_link"/><origin xyz="0.08 0 0.02" rpy="0 0 0"/>
+  </joint>
+  <!-- Optical convention: z forward, x right, y down. -->
+  <link name="camera_optical_link"/>
+  <joint name="camera_optical_joint" type="fixed">
+    <parent link="camera_link"/><child link="camera_optical_link"/>
+    <origin xyz="0 0 0" rpy="-1.57079632679 0 -1.57079632679"/>
+  </joint>
+
+  <link name="imu_link"/>
+  <joint name="imu_joint" type="fixed">
+    <parent link="sensor_link"/><child link="imu_link"/><origin xyz="0 0 0" rpy="0 0 0"/>
   </joint>
 
   <ros2_control name="GazeboSimSystem" type="system">
