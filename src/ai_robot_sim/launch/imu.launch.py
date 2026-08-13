@@ -25,6 +25,7 @@ def generate_launch_description():
         package='ai_robot_sensors', executable='sensor_adapter', name='imu_adapter',
         parameters=[{'sensor_type': 'imu', 'input_topic': '/sim/imu/data',
                      'output_topic': '/imu/data', 'frame_id': 'imu_link',
+                     'diagnostic_name': 'imu',
                      'expected_rate': 100.0, 'use_sim_time': LaunchConfiguration('use_sim_time')}],
         output='screen',
     )

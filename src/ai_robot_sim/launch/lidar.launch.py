@@ -25,6 +25,7 @@ def generate_launch_description():
         package='ai_robot_sensors', executable='sensor_adapter', name='lidar_adapter',
         parameters=[{'sensor_type': 'scan', 'input_topic': '/sim/scan',
                      'output_topic': '/scan', 'frame_id': 'laser_link',
+                     'diagnostic_name': 'lidar',
                      'expected_rate': 10.0, 'use_sim_time': LaunchConfiguration('use_sim_time')}],
         output='screen',
     )

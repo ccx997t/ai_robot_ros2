@@ -28,6 +28,7 @@ def generate_launch_description():
         package='ai_robot_sensors', executable='sensor_adapter', name='camera_image_adapter',
         parameters=[{'sensor_type': 'image', 'input_topic': '/sim/camera/image_raw',
                      'output_topic': '/camera/image_raw', 'frame_id': 'camera_optical_link',
+                     'diagnostic_name': 'camera_image',
                      'expected_rate': 15.0, 'use_sim_time': LaunchConfiguration('use_sim_time')}],
         output='screen',
     )
@@ -35,6 +36,7 @@ def generate_launch_description():
         package='ai_robot_sensors', executable='sensor_adapter', name='camera_info_adapter',
         parameters=[{'sensor_type': 'camera_info', 'input_topic': '/sim/camera/camera_info',
                      'output_topic': '/camera/camera_info', 'frame_id': 'camera_optical_link',
+                     'diagnostic_name': 'camera_info',
                      'expected_rate': 15.0, 'use_sim_time': LaunchConfiguration('use_sim_time')}],
         output='screen',
     )

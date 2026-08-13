@@ -64,6 +64,9 @@ def test_encoder_default_parameters():
 def test_encoder_has_independent_launch_entry():
     launch_text = (PACKAGE_DIR / 'launch' / 'encoder.launch.py').read_text()
     assert 'sim_base.launch.py' in launch_text
+    assert "'sensor_type': 'joint_state'" in launch_text
+    assert "'diagnostic_name': 'encoder'" in launch_text
+    assert "'monitor_only': True" in launch_text
     assert "'enable_lidar': 'false'" in launch_text
     assert "'enable_camera': 'false'" in launch_text
     assert "'enable_imu': 'false'" in launch_text
