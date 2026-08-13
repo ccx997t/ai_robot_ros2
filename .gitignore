@@ -3,5 +3,6 @@ install/
 log/
 logs/*
 !logs/.gitkeep
+evidence/rosbags/
 __pycache__/
 *.py[cod]
