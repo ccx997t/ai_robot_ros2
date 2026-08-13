@@ -20,9 +20,10 @@ base_controller:
     open_loop: false
     position_feedback: true
     use_stamped_vel: false
-    # The upstream safety relay owns the wall-clock 0.5 s watchdog. Disabling the
-    # controller's ROS-time watchdog avoids a second clock domain in simulation.
-    cmd_vel_timeout: 0.0
+    # The upstream safety relay owns the 0.5 s wall-clock watchdog and keeps
+    # publishing zero while expired. Keep this secondary ROS-time timeout long
+    # enough that it cannot expire between wall-clock safety updates.
+    cmd_vel_timeout: 1000.0
     publish_limited_velocity: true
     linear.x.has_velocity_limits: true
     linear.x.has_acceleration_limits: true

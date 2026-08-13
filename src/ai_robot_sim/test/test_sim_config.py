@@ -25,6 +25,6 @@ def test_diff_drive_controller_contract():
     assert params['base_frame_id'] == 'base_link'
     assert params['enable_odom_tf'] is True
     assert params['publish_rate'] >= 20.0
-    assert params['cmd_vel_timeout'] == 0.0
+    assert params['cmd_vel_timeout'] == 1000.0
     assert params['linear.x.max_velocity'] == 0.30
     assert params['angular.z.max_velocity'] == 0.80
