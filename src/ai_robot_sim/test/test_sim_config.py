@@ -16,6 +16,9 @@ def test_world_is_valid_sdf_with_required_systems():
     assert 'ignition-gazebo-sensors-system' in filenames
     assert 'ignition-gazebo-imu-system' in filenames
     assert world.find("model[@name='ground_plane']") is not None
+    target = world.find("model[@name='lidar_target']")
+    assert target is not None
+    assert target.find('pose').text.split()[:3] == ['2', '0', '0.5']
 
 
 def test_diff_drive_controller_contract():
