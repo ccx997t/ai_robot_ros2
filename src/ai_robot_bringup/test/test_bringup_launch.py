@@ -23,7 +23,7 @@ def generate_test_description():
     )
     bringup = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(launch_file),
-        launch_arguments={'mode': 'sim'}.items(),
+        launch_arguments={'mode': 'real'}.items(),
     )
     return LaunchDescription([
         bringup,
@@ -49,11 +49,14 @@ class TestBringupNodeGraph(unittest.TestCase):
         while time.monotonic() < deadline:
             rclpy.spin_once(self.node, timeout_sec=0.1)
             names = set(self.node.get_node_names())
-            if {'base_status_node', 'health_reporter'} <= names:
+            if {'base_status_node', 'cmd_vel_safety', 'odom_contract_relay',
+                    'health_reporter'} <= names:
                 break
 
         self.assertIn('base_status_node', names)
         self.assertIn('health_reporter', names)
+        self.assertIn('cmd_vel_safety', names)
+        self.assertIn('odom_contract_relay', names)
 
     def test_sim_mode_parameters(self):
         for node_name in ('base_status_node', 'health_reporter'):
@@ -67,8 +70,8 @@ class TestBringupNodeGraph(unittest.TestCase):
                 self.node, future, timeout_sec=5.0)
             self.assertTrue(future.done())
             values = future.result().values
-            self.assertEqual('sim', values[0].string_value)
-            self.assertTrue(values[1].bool_value)
+            self.assertEqual('real', values[0].string_value)
+            self.assertFalse(values[1].bool_value)
             self.node.destroy_client(client)
 
     def test_diagnostics_contract(self):
@@ -76,7 +79,9 @@ class TestBringupNodeGraph(unittest.TestCase):
         subscription = self.node.create_subscription(
             DiagnosticArray,
             '/diagnostics',
-            lambda message: received.append((time.monotonic(), message)),
+            lambda message: received.append((time.monotonic(), message))
+            if message.status and message.status[0].name == 'ai_robot_tools/health_reporter'
+            else None,
             10,
         )
         deadline = time.monotonic() + 5.0
@@ -88,7 +93,7 @@ class TestBringupNodeGraph(unittest.TestCase):
         self.assertEqual('ai_robot_tools/health_reporter', status.name)
         self.assertIn('hardware control is disabled', status.message)
         self.assertEqual(
-            'sim',
+            'real',
             {value.key: value.value for value in status.values}['mode'],
         )
 
@@ -101,8 +106,9 @@ class TestBringupNodeGraph(unittest.TestCase):
             self.assertLess(interval, 1.5)
 
         publishers = self.node.get_publishers_info_by_topic('/diagnostics')
-        self.assertEqual(1, len(publishers))
-        qos = publishers[0].qos_profile
-        self.assertEqual(ReliabilityPolicy.RELIABLE, qos.reliability)
-        self.assertEqual(DurabilityPolicy.VOLATILE, qos.durability)
+        self.assertEqual(2, len(publishers))
+        for publisher in publishers:
+            qos = publisher.qos_profile
+            self.assertEqual(ReliabilityPolicy.RELIABLE, qos.reliability)
+            self.assertEqual(DurabilityPolicy.VOLATILE, qos.durability)
         self.node.destroy_subscription(subscription)

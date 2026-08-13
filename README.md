@@ -12,6 +12,19 @@ source install/setup.bash
 ros2 launch ai_robot_bringup sim_bringup.launch.py
 ```
 
+仿真启动后，底盘只接受公共安全入口 `/cmd_vel`；安全节点将限速后的命令送往控制器，并在 0.5 秒无新命令或收到非有限值时发送停车命令：
+
+```bash
+ros2 topic pub --rate 10 /cmd_vel geometry_msgs/msg/Twist \
+  "{linear: {x: 0.15}, angular: {z: 0.0}}"
+```
+
+实体模式目前只启动安全的基础节点，不加载任何实体驱动：
+
+```bash
+ros2 launch ai_robot_bringup sim_bringup.launch.py mode:=real
+```
+
 测试：
 
 ```bash
@@ -23,7 +36,9 @@ bash scripts/test.sh
 | 软件包 | 语言 | 职责 |
 |---|---|---|
 | `ai_robot_base` | C++ | 最小底盘状态节点与命令看门狗逻辑 |
+| `ai_robot_description` | Xacro | 差速底盘模型、惯量、碰撞体和Frame |
+| `ai_robot_sim` | Launch/YAML/SDF | Gazebo Fortress world和`ros2_control`差速控制器 |
 | `ai_robot_tools` | Python | 发布标准 `/diagnostics` 的最小健康节点 |
 | `ai_robot_bringup` | Launch | 统一 `mode:=sim|real` 启动入口 |
 
-架构见 [docs/architecture/architecture_baseline.md](docs/architecture/architecture_baseline.md)，公共接口与TF规则分别见 [interface_baseline.md](docs/architecture/interface_baseline.md) 和 [tf_baseline.md](docs/architecture/tf_baseline.md)。实体硬件、仿真本体、传感器、导航与 AI 均未实现。
+架构见 [docs/architecture/architecture_baseline.md](docs/architecture/architecture_baseline.md)，公共接口与TF规则分别见 [interface_baseline.md](docs/architecture/interface_baseline.md) 和 [tf_baseline.md](docs/architecture/tf_baseline.md)。实体硬件、传感器、导航与 AI 均未实现。

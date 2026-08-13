@@ -50,11 +50,16 @@ class WorkspaceContractTest(unittest.TestCase):
         }
         self.assertEqual({'ai_robot_base', 'ai_robot_tools'}, packages)
         for node in nodes:
+            executable = next(
+                keyword.value.value for keyword in node.keywords
+                if keyword.arg == 'executable'
+            )
             parameters = next(
                 keyword.value for keyword in node.keywords
                 if keyword.arg == 'parameters'
             )
-            self.assertEqual('[parameters]', ast.unparse(parameters))
+            if executable not in {'cmd_vel_safety_node', 'odom_contract_relay'}:
+                self.assertEqual('[parameters]', ast.unparse(parameters))
 
     def test_sim_time_is_derived_from_mode(self):
         source = ast.unparse(self.launch_tree)

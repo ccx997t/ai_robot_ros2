@@ -4,7 +4,7 @@
   <description>Unified simulation and real-robot bringup entry points.</description>
   <maintainer email="maintainer@example.com">AI Robot Team</maintainer><license>Apache-2.0</license>
   <buildtool_depend>ament_cmake</buildtool_depend>
-  <exec_depend>launch</exec_depend><exec_depend>launch_ros</exec_depend><exec_depend>ai_robot_base</exec_depend><exec_depend>ai_robot_tools</exec_depend>
+  <exec_depend>launch</exec_depend><exec_depend>launch_ros</exec_depend><exec_depend>ai_robot_base</exec_depend><exec_depend>ai_robot_sim</exec_depend><exec_depend>ai_robot_tools</exec_depend>
   <test_depend>ament_index_python</test_depend>
   <test_depend>diagnostic_msgs</test_depend>
   <test_depend>launch_testing</test_depend>
