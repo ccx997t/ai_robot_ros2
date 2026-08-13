@@ -7,7 +7,7 @@
 | 仿真平台 | Gazebo Fortress 6.18.0、`ros_gz` 0.244.25 | `ros_gz_sim` | 不适用 | `/clock`及显式桥接接口 | GUI、Transport、`/clock`桥接 | 已准入 |
 | 机器人模型 | URDF、Xacro 2.1.1、`robot_state_publisher` 3.0.3 | 共用描述包 | 共用描述包 | `/robot_description`、`/tf`、`/tf_static` | Xacro解析和TF契约 | 基础资源已准入，M2实现 |
 | 坐标变换 | TF2 0.25.20 | 仿真驱动提供动态TF | 实体驱动提供动态TF | `map -> odom -> base_link -> sensor_link` | Frame、频率、时间戳检查 | 已准入 |
-| 差速底盘 | `ros2_control`、`diff_drive_controller` | Gazebo控制插件 | MCU硬件接口 | `/cmd_vel`、`/odom`、TF | 超时、限速、方向和里程计 | 候选，M2前最小验证 |
+| 差速底盘 | `ros2_control` 2.54.0、`diff_drive_controller` 2.53.3 | `gz_ros2_control` 0.7.20 | MCU硬件接口 | `/cmd_vel`、`/odom`、TF | 超时、限速、方向和里程计 | 依赖已准入，M2实现中 |
 | 安全与诊断 | `diagnostic_msgs`，后续评估 `diagnostic_updater` | 共用监督逻辑 | 共用监督逻辑与硬件状态 | `/diagnostics` | 消息、频率、状态和值字段 | 标准消息已准入 |
 | 激光雷达 | Gazebo传感器、品牌驱动待选 | Gazebo雷达 | 品牌驱动/适配节点 | `/scan` | 类型、QoS、频率、Frame | 候选，M3前准入 |
 | 相机 | Gazebo传感器、`image_transport`，`image_pipeline`待验证 | Gazebo相机 | 品牌驱动/适配节点 | `/camera/*` | 图像、CameraInfo、频率、时间戳 | 部分准入，M3前补齐 |
