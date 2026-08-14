@@ -3,6 +3,7 @@ from pathlib import Path
 
 LAUNCH_FILE = Path(__file__).parents[1] / 'launch' / 'm4_bringup.launch.py'
 SIM_BASE_FILE = Path(__file__).parents[2] / 'ai_robot_sim' / 'launch' / 'sim_base.launch.py'
+FAULT_LAUNCH_FILE = Path(__file__).parents[1] / 'launch' / 'm4_fault_injection.launch.py'
 
 
 def test_m4_entry_declares_mode_contract_and_full_simulation():
@@ -58,3 +59,13 @@ def test_controllers_are_gated_on_robot_creation_exit():
     assert 'RegisterEventHandler' in source
     assert 'OnProcessExit(target_action=spawn_robot' in source
     assert 'on_exit=[joint_state_spawner, base_spawner]' in source
+
+
+def test_fault_injection_launch_is_simulation_only_and_recoverable():
+    source = FAULT_LAUNCH_FILE.read_text(encoding='utf-8')
+
+    assert "executable='fault_injector'" in source
+    assert "'message_type'" in source
+    assert "'fault_mode'" in source
+    assert "'initially_enabled'" in source
+    assert "'use_sim_time': True" in source

@@ -11,6 +11,7 @@ setup(
         ('share/' + package_name, ['package.xml']),
     ],
     install_requires=['setuptools'],
+    tests_require=['pytest'],
     zip_safe=True,
     maintainer='AI Robot Team',
     maintainer_email='maintainer@example.com',
@@ -19,5 +20,6 @@ setup(
     entry_points={'console_scripts': [
         'sensor_adapter = ai_robot_sensors.sensor_adapter:main',
         'image_processor = ai_robot_sensors.image_processor:main',
+        'fault_injector = ai_robot_sensors.fault_injector:main',
     ]},
 )
