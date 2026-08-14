@@ -19,6 +19,9 @@ def test_world_is_valid_sdf_with_required_systems():
     target = world.find("model[@name='lidar_target']")
     assert target is not None
     assert target.find('pose').text.split()[:3] == ['2', '0', '0.5']
+    target_size = target.find(
+        "link/collision/geometry/box/size").text.split()
+    assert target_size == ['0.5', '0.5', '1.0']
 
 
 def test_diff_drive_controller_contract():

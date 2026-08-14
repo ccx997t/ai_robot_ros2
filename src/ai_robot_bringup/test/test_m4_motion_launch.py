@@ -18,7 +18,7 @@ from nav_msgs.msg import Odometry
 import pytest
 import rclpy
 from rclpy.qos import DurabilityPolicy, QoSProfile, ReliabilityPolicy, qos_profile_sensor_data
-from sensor_msgs.msg import JointState
+from sensor_msgs.msg import JointState, LaserScan
 from tf2_msgs.msg import TFMessage
 
 
@@ -46,6 +46,7 @@ class TestM4MotionIntegration(unittest.TestCase):
         cls.odometry = deque(maxlen=500)
         cls.wheel_odometry = deque(maxlen=500)
         cls.joints = deque(maxlen=500)
+        cls.scans = deque(maxlen=100)
         cls.tf_pairs = set()
         static_tf_qos = QoSProfile(
             depth=100,
@@ -61,6 +62,8 @@ class TestM4MotionIntegration(unittest.TestCase):
             cls.node.create_subscription(
                 JointState, '/joint_states', cls.joints.append,
                 qos_profile_sensor_data),
+            cls.node.create_subscription(
+                LaserScan, '/scan', cls.scans.append, qos_profile_sensor_data),
             cls.node.create_subscription(TFMessage, '/tf', cls.receive_tf, 100),
             cls.node.create_subscription(
                 TFMessage, '/tf_static', cls.receive_tf, static_tf_qos),
@@ -102,6 +105,50 @@ class TestM4MotionIntegration(unittest.TestCase):
     def wheel_positions(message):
         positions = dict(zip(message.name, message.position))
         return positions['left_wheel_joint'], positions['right_wheel_joint']
+
+    def test_a_lidar_tf_and_fixed_obstacle_geometry(self):
+        self.assertTrue(
+            self.spin_until(lambda: len(self.scans) >= 20, 45.0),
+            f'laser scan count={len(self.scans)}')
+        self.assertTrue(self.spin_until(
+            lambda: {('base_link', 'sensor_link'), ('sensor_link', 'laser_link')}
+            <= self.tf_pairs,
+            10.0,
+        ))
+
+        distances = []
+        bearings = []
+        left_edges = []
+        right_edges = []
+        for scan in list(self.scans)[-20:]:
+            front_returns = [
+                (scan.angle_min + index * scan.angle_increment, distance)
+                for index, distance in enumerate(scan.ranges)
+                if -0.35 <= scan.angle_min + index * scan.angle_increment <= 0.35
+                and math.isfinite(distance)
+                and scan.range_min <= distance <= scan.range_max
+            ]
+            self.assertTrue(front_returns)
+            bearing, distance = min(front_returns, key=lambda item: item[1])
+            target_returns = [item for item in front_returns if item[1] < 1.80]
+            self.assertTrue(target_returns)
+            distances.append(distance)
+            bearings.append(bearing)
+            right_edges.append(min(item[0] for item in target_returns))
+            left_edges.append(max(item[0] for item in target_returns))
+
+        distances.sort()
+        bearings.sort()
+        right_edges.sort()
+        left_edges.sort()
+        median = len(distances) // 2
+        # World contract: a 0.5 m box centered at x=2.0 m. The lidar is
+        # mounted at base x=0.1 m, so its front face is about 1.65 m away.
+        self.assertGreater(distances[median], 1.55)
+        self.assertLess(distances[median], 1.75)
+        self.assertLess(abs(bearings[median]), 0.05)
+        self.assertLess(right_edges[median], -0.10)
+        self.assertGreater(left_edges[median], 0.10)
 
     def test_base_encoder_odometry_and_tf_are_consistent(self):
         # Wait for controller outputs before querying controller_manager. Calling

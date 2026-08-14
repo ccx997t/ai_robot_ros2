@@ -25,6 +25,9 @@
       </link>
     </model>
     <model name="lidar_target">
+      <!-- M4 lidar contract: 0.5 m square target centered at (2, 0).
+           With laser_link at base x=0.1 m, the expected front range is 1.65 m
+           and the target is centered at bearing 0 rad. -->
       <static>true</static>
       <pose>2 0 0.5 0 0 0</pose>
       <link name="link">
