@@ -10,8 +10,10 @@
 
 ## 接口与边界
 
-- 候选输入：编码器里程计`nav_msgs/msg/Odometry`和`/imu/data` (`sensor_msgs/msg/Imu`)。
-- 融合输出、Frame、频率、QoS和协方差在M4功能验收时冻结。
+- 冻结输入：原始编码器里程计`/wheel/odom` (`nav_msgs/msg/Odometry`)和`/imu/data` (`sensor_msgs/msg/Imu`)。
+- 冻结输出：`/odom` (`nav_msgs/msg/Odometry`)，Reliable/Volatile，30 Hz目标；Header Frame为`odom`，child Frame为`base_link`。
+- 二维融合字段：轮式里程计提供平面位置、偏航、平面速度和偏航角速度；IMU提供偏航和偏航角速度。
+- 输出位姿和速度协方差必须为有限非零值；过程噪声矩阵冻结在`ai_robot_bringup/config/ekf_m4.yaml`。
 - 只实施二维底盘状态估计，不提前实施M5的SLAM、定位或Nav2。
 - 只允许一个权威节点发布`odom -> base_link`；融合与底盘原始TF不得重复发布。
 
@@ -32,5 +34,4 @@ rosdep check --from-paths src --ignore-src
 - apt升级后必须重跑M4融合和故障注入测试，不以“节点可启动”代替功能验收。
 - 功能集成失败时禁用M4融合启动入口，回退到S1-M3最终关闭提交`4fbd776`；卸载命令为`sudo apt remove ros-humble-robot-localization`。
 
-- 准入结论：依赖与可执行节点准入通过；融合参数和运行指标待M4功能验收。
-
+- 准入结论：依赖与可执行节点准入通过；M4输入、输出、Frame、TF所有权和协方差契约已通过自动集成测试，资源指标仍待M4后续验收。

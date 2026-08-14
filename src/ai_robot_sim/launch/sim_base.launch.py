@@ -14,7 +14,7 @@ def generate_launch_description():
     sim_share = Path(get_package_share_directory('ai_robot_sim'))
     description_share = Path(get_package_share_directory('ai_robot_description'))
     ros_gz_share = Path(get_package_share_directory('ros_gz_sim'))
-    controllers = sim_share / 'config' / 'controllers.yaml'
+    controllers = LaunchConfiguration('controllers_file')
     model = description_share / 'urdf' / 'ai_robot.urdf.xacro'
     world = sim_share / 'worlds' / 'm2_test.sdf'
     use_sim_time = LaunchConfiguration('use_sim_time')
@@ -24,7 +24,7 @@ def generate_launch_description():
 
     robot_description = ParameterValue(
         Command([
-            'xacro ', str(model), ' controllers_file:=', str(controllers),
+            'xacro ', str(model), ' controllers_file:=', controllers,
             ' enable_lidar:=', enable_lidar,
             ' enable_camera:=', enable_camera,
             ' enable_imu:=', enable_imu,
@@ -61,6 +61,10 @@ def generate_launch_description():
     )
     return LaunchDescription([
         DeclareLaunchArgument('use_sim_time', default_value='true', choices=['true', 'false']),
+        DeclareLaunchArgument(
+            'controllers_file',
+            default_value=str(sim_share / 'config' / 'controllers.yaml'),
+        ),
         DeclareLaunchArgument('enable_lidar', default_value='false', choices=['true', 'false']),
         DeclareLaunchArgument('enable_camera', default_value='false', choices=['true', 'false']),
         DeclareLaunchArgument('enable_imu', default_value='false', choices=['true', 'false']),

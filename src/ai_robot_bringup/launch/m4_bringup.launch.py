@@ -26,9 +26,13 @@ def generate_launch_description():
     sim_time_text = PythonExpression(["'true' if '", mode, "' == 'sim' else 'false'"])
     use_sim_time = ParameterValue(sim_time_text, value_type=bool)
     common_parameters = {'mode': mode, 'use_sim_time': use_sim_time}
+    bringup_share = Path(get_package_share_directory('ai_robot_bringup'))
+    sim_share = Path(get_package_share_directory('ai_robot_sim'))
     sensors_launch = (
-        Path(get_package_share_directory('ai_robot_sim')) / 'launch' / 'sensors.launch.py'
+        sim_share / 'launch' / 'sensors.launch.py'
     )
+    sim_condition = IfCondition(PythonExpression(["'", mode, "' == 'sim'"]))
+    real_condition = IfCondition(PythonExpression(["'", mode, "' == 'real'"]))
 
     safety_layer = [
         Node(
@@ -40,10 +44,6 @@ def generate_launch_description():
             parameters=[{'use_sim_time': use_sim_time}], output='screen',
         ),
         Node(
-            package='ai_robot_base', executable='odom_contract_relay',
-            parameters=[{'use_sim_time': use_sim_time}], output='screen',
-        ),
-        Node(
             package='ai_robot_tools', executable='health_reporter',
             parameters=[common_parameters], output='screen',
         ),
@@ -51,12 +51,42 @@ def generate_launch_description():
 
     simulation = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(str(sensors_launch)),
-        launch_arguments={'use_sim_time': sim_time_text}.items(),
-        condition=IfCondition(PythonExpression(["'", mode, "' == 'sim'"])),
+        launch_arguments={
+            'use_sim_time': sim_time_text,
+            'controllers_file': str(sim_share / 'config' / 'controllers_m4.yaml'),
+        }.items(),
+        condition=sim_condition,
+    )
+    wheel_odom_relay = Node(
+        package='ai_robot_base', executable='odom_contract_relay',
+        parameters=[{
+            'use_sim_time': use_sim_time,
+            'input_topic': '/base_controller/odom',
+            'output_topic': '/wheel/odom',
+        }],
+        condition=sim_condition,
+        output='screen',
+    )
+    fused_odometry = Node(
+        package='robot_localization', executable='ekf_node', name='ekf_filter_node',
+        parameters=[str(bringup_share / 'config' / 'ekf_m4.yaml'),
+                    {'use_sim_time': use_sim_time}],
+        remappings=[('/odometry/filtered', '/odom')],
+        condition=sim_condition,
+        output='screen',
+    )
+    real_odom_relay = Node(
+        package='ai_robot_base', executable='odom_contract_relay',
+        parameters=[{'use_sim_time': use_sim_time}],
+        condition=real_condition,
+        output='screen',
     )
 
     return LaunchDescription([
         DeclareLaunchArgument('mode', default_value='sim', choices=['sim', 'real']),
         *safety_layer,
         simulation,
+        wheel_odom_relay,
+        fused_odometry,
+        real_odom_relay,
     ])

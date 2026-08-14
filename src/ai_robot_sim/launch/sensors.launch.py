@@ -30,6 +30,7 @@ def generate_launch_description():
         PythonLaunchDescriptionSource(str(sim_share / 'launch' / 'sim_base.launch.py')),
         launch_arguments={
             'use_sim_time': LaunchConfiguration('use_sim_time'),
+            'controllers_file': LaunchConfiguration('controllers_file'),
             'enable_lidar': 'true',
             'enable_camera': 'true',
             'enable_imu': 'true',
@@ -38,6 +39,7 @@ def generate_launch_description():
     bridge = Node(
         package='ros_gz_bridge', executable='parameter_bridge',
         arguments=[
+            '/clock@rosgraph_msgs/msg/Clock[gz.msgs.Clock',
             '/sim/scan@sensor_msgs/msg/LaserScan@gz.msgs.LaserScan',
             '/sim/camera/image_raw@sensor_msgs/msg/Image@gz.msgs.Image',
             '/sim/camera/camera_info@sensor_msgs/msg/CameraInfo@gz.msgs.CameraInfo',
@@ -59,6 +61,10 @@ def generate_launch_description():
     )
     return LaunchDescription([
         DeclareLaunchArgument('use_sim_time', default_value='true', choices=['true', 'false']),
+        DeclareLaunchArgument(
+            'controllers_file',
+            default_value=str(sim_share / 'config' / 'controllers.yaml'),
+        ),
         base,
         bridge,
         adapter('lidar_adapter', 'scan', '/sim/scan', '/scan', 'laser_link', 10.0),
@@ -69,4 +75,3 @@ def generate_launch_description():
         adapter('imu_adapter', 'imu', '/sim/imu/data', '/imu/data', 'imu_link', 100.0),
         encoder_monitor,
     ])
-

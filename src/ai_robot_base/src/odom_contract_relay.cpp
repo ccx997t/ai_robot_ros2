@@ -6,10 +6,13 @@
 class OdomContractRelay : public rclcpp::Node {
 public:
   OdomContractRelay() : Node("odom_contract_relay") {
+    const auto input_topic = declare_parameter<std::string>(
+      "input_topic", "/base_controller/odom");
+    const auto output_topic = declare_parameter<std::string>("output_topic", "/odom");
     publisher_ = create_publisher<nav_msgs::msg::Odometry>(
-      "/odom", rclcpp::QoS(rclcpp::KeepLast(10)).reliable().durability_volatile());
+      output_topic, rclcpp::QoS(rclcpp::KeepLast(10)).reliable().durability_volatile());
     subscription_ = create_subscription<nav_msgs::msg::Odometry>(
-      "/base_controller/odom",
+      input_topic,
       rclcpp::QoS(rclcpp::KeepLast(10)).reliable().transient_local(),
       [this](nav_msgs::msg::Odometry::ConstSharedPtr message) {
         publisher_->publish(*message);

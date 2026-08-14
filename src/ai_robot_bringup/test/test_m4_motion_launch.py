@@ -44,6 +44,7 @@ class TestM4MotionIntegration(unittest.TestCase):
         rclpy.init()
         cls.node = rclpy.create_node('m4_motion_integration_test')
         cls.odometry = deque(maxlen=500)
+        cls.wheel_odometry = deque(maxlen=500)
         cls.joints = deque(maxlen=500)
         cls.tf_pairs = set()
         static_tf_qos = QoSProfile(
@@ -55,6 +56,8 @@ class TestM4MotionIntegration(unittest.TestCase):
         cls.subscriptions = [
             cls.node.create_subscription(
                 Odometry, '/odom', cls.odometry.append, 10),
+            cls.node.create_subscription(
+                Odometry, '/wheel/odom', cls.wheel_odometry.append, 10),
             cls.node.create_subscription(
                 JointState, '/joint_states', cls.joints.append,
                 qos_profile_sensor_data),
@@ -101,23 +104,27 @@ class TestM4MotionIntegration(unittest.TestCase):
         return positions['left_wheel_joint'], positions['right_wheel_joint']
 
     def test_base_encoder_odometry_and_tf_are_consistent(self):
+        # Wait for controller outputs before querying controller_manager. Calling
+        # list_controllers while both spawners are configuring can trigger an
+        # upstream Humble/gz_ros2_control service-response race.
+        self.assertTrue(
+            self.spin_until(lambda: len(self.wheel_odometry) >= 20, 45.0),
+            f'wheel odometry count={len(self.wheel_odometry)}')
+        self.assertTrue(
+            self.spin_until(lambda: len(self.odometry) >= 20, 10.0),
+            f'fused odometry count={len(self.odometry)}')
+        self.assertTrue(
+            self.spin_until(lambda: len(self.joints) >= 20, 10.0),
+            f'joint state count={len(self.joints)}')
+
         controller_client = self.node.create_client(
             ListControllers, '/controller_manager/list_controllers')
-        self.assertTrue(controller_client.wait_for_service(timeout_sec=45.0))
-
-        def controllers_active():
-            future = controller_client.call_async(ListControllers.Request())
-            if not self.spin_until(future.done, 2.0):
-                return False
-            states = {item.name: item.state for item in future.result().controller}
-            return states.get('joint_state_broadcaster') == 'active' and \
-                states.get('base_controller') == 'active'
-
-        self.assertTrue(self.spin_until(controllers_active, 20.0))
-        self.assertTrue(self.spin_until(
-            lambda: len(self.odometry) >= 20 and len(self.joints) >= 20,
-            20.0,
-        ))
+        self.assertTrue(controller_client.wait_for_service(timeout_sec=5.0))
+        future = controller_client.call_async(ListControllers.Request())
+        self.assertTrue(self.spin_until(future.done, 5.0))
+        states = {item.name: item.state for item in future.result().controller}
+        self.assertEqual('active', states.get('joint_state_broadcaster'))
+        self.assertEqual('active', states.get('base_controller'))
         self.assertTrue(self.spin_until(
             lambda: {('odom', 'base_link'), ('base_link', 'sensor_link')}
             <= self.tf_pairs,
@@ -125,9 +132,11 @@ class TestM4MotionIntegration(unittest.TestCase):
         ))
 
         start_odom = self.odometry[-1].pose.pose.position.x
+        start_wheel_odom = self.wheel_odometry[-1].pose.pose.position.x
         start_left, start_right = self.wheel_positions(self.joints[-1])
         self.command_for(0.2, 1.5)
         forward_odom = self.odometry[-1].pose.pose.position.x
+        forward_wheel_odom = self.wheel_odometry[-1].pose.pose.position.x
         forward_left, forward_right = self.wheel_positions(self.joints[-1])
 
         odom_delta = forward_odom - start_odom
@@ -135,9 +144,19 @@ class TestM4MotionIntegration(unittest.TestCase):
             (forward_left - start_left) + (forward_right - start_right)
         ) * 0.075 / 2.0
         self.assertGreater(odom_delta, 0.10)
+        self.assertGreater(forward_wheel_odom - start_wheel_odom, 0.10)
         self.assertGreater(forward_left - start_left, 1.0)
         self.assertGreater(forward_right - start_right, 1.0)
         self.assertTrue(math.isclose(odom_delta, wheel_distance, abs_tol=0.04))
+        self.assertTrue(math.isclose(
+            odom_delta, forward_wheel_odom - start_wheel_odom, abs_tol=0.04))
+
+        fused = self.odometry[-1]
+        self.assertEqual('odom', fused.header.frame_id)
+        self.assertEqual('base_link', fused.child_frame_id)
+        self.assertGreater(fused.pose.covariance[0], 0.0)
+        self.assertGreater(fused.twist.covariance[0], 0.0)
+        self.assertEqual(1, len(self.node.get_publishers_info_by_topic('/odom')))
 
         self.command_for(-0.2, 1.5)
         reverse_odom = self.odometry[-1].pose.pose.position.x

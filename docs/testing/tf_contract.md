@@ -21,6 +21,14 @@ ros2 run tf2_ros tf2_monitor odom base_link
 
 验收记录至少保存：发布者、平均/最大延迟、更新频率、最大年龄、测试时长和mode。传感器消息的`header.frame_id`必须能在同一时钟域下解析到`base_link`。
 
+## S1-M4融合所有权
+
+- M4仿真中`base_controller`只发布原始里程计，不发布TF。
+- `ekf_filter_node`是`odom -> base_link`的唯一权威发布者。
+- 原始轮式里程计使用`/wheel/odom`，融合结果使用公共`/odom`；两者均为`nav_msgs/msg/Odometry`，Frame固定为`odom`和`base_link`。
+- `robot_state_publisher`继续独占`base_link -> sensor_link`及各传感器静态外参。
+- Gazebo `/clock`必须单向桥接到ROS 2，融合输入、输出和TF使用同一仿真时间域。
+
 ## 失败场景
 
 - 缺失Frame或树断开时测试失败。
