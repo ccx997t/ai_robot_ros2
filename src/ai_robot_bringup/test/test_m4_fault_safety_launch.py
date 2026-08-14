@@ -159,8 +159,15 @@ class TestM4FaultDiagnosticsAndSafety(unittest.TestCase):
         self.publish_command_for(1.0, 0.4)
         self.assertTrue(self.base_commands)
         self.assertAlmostEqual(0.3, self.base_commands[-1].linear.x, places=6)
-        safety = self.diagnostics.get('base/cmd_vel_safety')
-        self.assertIsNotNone(safety)
+        self.assertTrue(self.spin_until(
+            lambda: (
+                self.diagnostics.get('base/cmd_vel_safety') is not None
+                and self.diagnostics['base/cmd_vel_safety'].message
+                == 'command limited'
+            ),
+            2.0,
+        ))
+        safety = self.diagnostics['base/cmd_vel_safety']
         self.assertEqual(DiagnosticStatus.WARN, safety.level)
         self.assertEqual('command limited', safety.message)
 
