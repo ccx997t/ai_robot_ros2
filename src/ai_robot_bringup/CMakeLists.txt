@@ -20,8 +20,16 @@ if(BUILD_TESTING)
       "ROS_DOMAIN_ID=83"
       "IGN_PARTITION=ai_robot_m4_motion_test"
   )
+  add_launch_test(
+    test/test_m4_fault_safety_launch.py
+    TIMEOUT 45
+    ENV
+      "ROS_LOG_DIR=${CMAKE_CURRENT_BINARY_DIR}/ros_logs"
+      "ROS_DOMAIN_ID=84"
+  )
   set_tests_properties(
     test_test_bringup_launch.py
+    test_test_m4_fault_safety_launch.py
     test_test_m4_motion_launch.py
     PROPERTIES RUN_SERIAL TRUE
   )

@@ -33,6 +33,8 @@ class SensorAdapter(Node):
         self.diagnostic_name = self.declare_parameter(
             'diagnostic_name', sensor_type).value
         self.monitor_only = bool(self.declare_parameter('monitor_only', False).value)
+        self.validate_input_frame = bool(self.declare_parameter(
+            'validate_input_frame', False).value)
         self.required_joints = list(self.declare_parameter(
             'required_joints', ['left_wheel_joint', 'right_wheel_joint']).value)
         self.last_received = None
@@ -53,6 +55,7 @@ class SensorAdapter(Node):
             1.0, self.publish_diagnostic, clock=self.steady_clock)
 
     def receive(self, message):
+        received_frame_id = message.header.frame_id
         if not self.monitor_only:
             message.header.frame_id = self.frame_id
             self.publisher.publish(message)
@@ -61,7 +64,12 @@ class SensorAdapter(Node):
         self.timestamp_valid = stamp != (0, 0) and (
             self.last_stamp is None or stamp >= self.last_stamp)
         self.last_stamp = stamp
-        self.frame_valid = message.header.frame_id == self.frame_id
+        # Gazebo source frames may require normalization. Fault-injection and
+        # real-driver admission tests can explicitly validate the source frame
+        # before normalization.
+        self.frame_valid = (
+            received_frame_id == self.frame_id
+            if self.validate_input_frame else message.header.frame_id == self.frame_id)
         self.data_valid = self.validate_data(message)
         self.last_received = now
         self.receive_times.append(now)
