@@ -2,6 +2,7 @@ from pathlib import Path
 
 
 LAUNCH_FILE = Path(__file__).parents[1] / 'launch' / 'm4_bringup.launch.py'
+SIM_BASE_FILE = Path(__file__).parents[2] / 'ai_robot_sim' / 'launch' / 'sim_base.launch.py'
 
 
 def test_m4_entry_declares_mode_contract_and_full_simulation():
@@ -35,8 +36,25 @@ def test_simulation_uses_fused_odometry_as_the_only_tf_authority():
     assert "('/odometry/filtered', '/odom')" in source
 
 
+def test_simulation_includes_minimal_camera_processing_chain():
+    source = LAUNCH_FILE.read_text(encoding='utf-8')
+
+    assert "executable='image_processor'" in source
+    assert "'input_topic': '/camera/image_raw'" in source
+    assert "'output_topic': '/camera/image_mono'" in source
+    assert "'max_latency_ms': 100.0" in source
+
+
 def test_real_mode_fail_safe_contract_is_documented():
     source = LAUNCH_FILE.read_text(encoding='utf-8')
 
     assert 'Real mode remains fail-safe' in source
     assert 'starts no simulator' in source
+
+
+def test_controllers_are_gated_on_robot_creation_exit():
+    source = SIM_BASE_FILE.read_text(encoding='utf-8')
+
+    assert 'RegisterEventHandler' in source
+    assert 'OnProcessExit(target_action=spawn_robot' in source
+    assert 'on_exit=[joint_state_spawner, base_spawner]' in source

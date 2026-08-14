@@ -10,7 +10,7 @@
 | 差速底盘 | `ros2_control` 2.54.0、`diff_drive_controller` 2.53.3 | `gz_ros2_control` 0.7.20 | MCU硬件接口 | `/cmd_vel`、`/odom`、TF | 超时、限速、方向和里程计 | M2已验收 |
 | 安全与诊断 | `diagnostic_msgs`，后续评估 `diagnostic_updater` | 共用监督逻辑 | 共用监督逻辑与硬件状态 | `/diagnostics` | 消息、频率、状态和值字段 | 标准消息已准入 |
 | 激光雷达 | Gazebo 6.18.0传感器、`ros_gz_bridge` 0.244.25 | Gazebo GPU雷达与独立桥接 | 品牌驱动/适配节点 | `/scan` | 类型、QoS、频率、Frame | M3仿真依赖已准入，功能待实现 |
-| 相机 | Gazebo 6.18.0、`ros_gz_image` 0.244.25、`image_transport` 3.1.13 | Gazebo相机与独立图像桥接 | 品牌驱动/适配节点 | `/camera/image_raw`、`/camera/camera_info` | 图像、CameraInfo、频率、时间戳 | M3仿真依赖已准入，功能待实现 |
+| 相机 | Gazebo 6.18.0、`ros_gz_image` 0.244.25、`image_transport` 3.1.13 | Gazebo相机、桥接与轻量灰度节点 | 品牌驱动/适配节点＋同一灰度契约 | `/camera/image_raw`、`/camera/camera_info`、`/camera/image_mono` | 图像、CameraInfo、编码、尺寸、频率、时间戳、延迟 | M3原始接口与M4最小处理链已验收 |
 | IMU与融合 | Gazebo 6.18.0 IMU、`ros_gz_bridge` 0.244.25；`robot_localization` 3.5.4 | Gazebo IMU桥接＋`ekf_node` | 品牌IMU/适配节点＋同一融合配置 | `/imu/data`、融合里程计 | 协方差、频率、Frame、异常输入 | M3原始IMU已验收；M4融合依赖已准入 |
 | SLAM | `slam_toolbox`候选 | 复用标准接口 | 复用标准接口 | 地图及定位相关标准接口 | 固定数据集建图与重载 | 候选，M5前准入 |
 | 导航 | Nav2、AMCL候选 | 复用标准接口 | 复用标准接口 | Nav2 Action、路径和状态 | 到点、取消、超时和不可达 | 候选，M5前准入 |

@@ -75,6 +75,19 @@ def generate_launch_description():
         condition=sim_condition,
         output='screen',
     )
+    camera_processing = Node(
+        package='ai_robot_sensors', executable='image_processor',
+        name='camera_gray_processor',
+        parameters=[{
+            'use_sim_time': use_sim_time,
+            'input_topic': '/camera/image_raw',
+            'output_topic': '/camera/image_mono',
+            'expected_rate': 15.0,
+            'max_latency_ms': 100.0,
+        }],
+        condition=sim_condition,
+        output='screen',
+    )
     real_odom_relay = Node(
         package='ai_robot_base', executable='odom_contract_relay',
         parameters=[{'use_sim_time': use_sim_time}],
@@ -88,5 +101,6 @@ def generate_launch_description():
         simulation,
         wheel_odom_relay,
         fused_odometry,
+        camera_processing,
         real_odom_relay,
     ])

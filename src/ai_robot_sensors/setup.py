@@ -18,5 +18,6 @@ setup(
     license='Apache-2.0',
     entry_points={'console_scripts': [
         'sensor_adapter = ai_robot_sensors.sensor_adapter:main',
+        'image_processor = ai_robot_sensors.image_processor:main',
     ]},
 )

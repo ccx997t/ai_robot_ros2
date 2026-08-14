@@ -18,7 +18,8 @@ from nav_msgs.msg import Odometry
 import pytest
 import rclpy
 from rclpy.qos import DurabilityPolicy, QoSProfile, ReliabilityPolicy, qos_profile_sensor_data
-from sensor_msgs.msg import JointState, LaserScan
+from rosgraph_msgs.msg import Clock
+from sensor_msgs.msg import Image, Imu, JointState, LaserScan
 from tf2_msgs.msg import TFMessage
 
 
@@ -47,6 +48,10 @@ class TestM4MotionIntegration(unittest.TestCase):
         cls.wheel_odometry = deque(maxlen=500)
         cls.joints = deque(maxlen=500)
         cls.scans = deque(maxlen=100)
+        cls.raw_images = deque(maxlen=100)
+        cls.mono_images = deque(maxlen=100)
+        cls.imu_messages = deque(maxlen=300)
+        cls.clocks = deque(maxlen=300)
         cls.tf_pairs = set()
         static_tf_qos = QoSProfile(
             depth=100,
@@ -64,6 +69,19 @@ class TestM4MotionIntegration(unittest.TestCase):
                 qos_profile_sensor_data),
             cls.node.create_subscription(
                 LaserScan, '/scan', cls.scans.append, qos_profile_sensor_data),
+            cls.node.create_subscription(
+                Image, '/camera/image_raw',
+                lambda message: cls.raw_images.append((time.monotonic(), message)),
+                qos_profile_sensor_data),
+            cls.node.create_subscription(
+                Image, '/camera/image_mono',
+                lambda message: cls.mono_images.append((time.monotonic(), message)),
+                qos_profile_sensor_data),
+            cls.node.create_subscription(
+                Imu, '/imu/data', cls.imu_messages.append,
+                qos_profile_sensor_data),
+            cls.node.create_subscription(
+                Clock, '/clock', cls.clocks.append, qos_profile_sensor_data),
             cls.node.create_subscription(TFMessage, '/tf', cls.receive_tf, 100),
             cls.node.create_subscription(
                 TFMessage, '/tf_static', cls.receive_tf, static_tf_qos),
@@ -149,6 +167,98 @@ class TestM4MotionIntegration(unittest.TestCase):
         self.assertLess(abs(bearings[median]), 0.05)
         self.assertLess(right_edges[median], -0.10)
         self.assertGreater(left_edges[median], 0.10)
+
+    def test_b_camera_minimal_processing_contract(self):
+        self.assertTrue(self.spin_until(
+            lambda: len(self.raw_images) >= 25 and len(self.mono_images) >= 25,
+            45.0,
+        ))
+        output = self.mono_images[-1][1]
+        self.assertEqual('camera_optical_link', output.header.frame_id)
+        self.assertEqual((320, 240, 'mono8', 320),
+                         (output.width, output.height, output.encoding, output.step))
+        self.assertEqual(output.width * output.height, len(output.data))
+
+        samples = list(self.mono_images)[-25:]
+        measured_rate = (len(samples) - 1) / (samples[-1][0] - samples[0][0])
+        self.assertGreater(measured_rate, 10.5)
+        self.assertLess(measured_rate, 19.5)
+
+        raw_arrivals = {
+            (message.header.stamp.sec, message.header.stamp.nanosec): received
+            for received, message in self.raw_images
+        }
+        latencies_ms = [
+            abs(received - raw_arrivals[
+                (message.header.stamp.sec, message.header.stamp.nanosec)]) * 1000.0
+            for received, message in self.mono_images
+            if (message.header.stamp.sec, message.header.stamp.nanosec) in raw_arrivals
+        ]
+        self.assertGreaterEqual(len(latencies_ms), 20)
+        latencies_ms.sort()
+        p95_index = math.ceil(len(latencies_ms) * 0.95) - 1
+        self.assertLess(latencies_ms[p95_index], 100.0)
+
+        publishers = self.node.get_publishers_info_by_topic('/camera/image_mono')
+        self.assertEqual(1, len(publishers))
+        self.assertEqual(ReliabilityPolicy.BEST_EFFORT,
+                         publishers[0].qos_profile.reliability)
+        self.assertEqual(DurabilityPolicy.VOLATILE,
+                         publishers[0].qos_profile.durability)
+
+    def test_b_time_qos_tf_and_startup_contracts(self):
+        self.assertTrue(self.spin_until(
+            lambda: len(self.clocks) >= 20 and len(self.imu_messages) >= 50
+            and len(self.odometry) >= 10 and len(self.scans) >= 10
+            and len(self.raw_images) >= 10 and len(self.mono_images) >= 10,
+            45.0,
+        ))
+
+        required_tf = {
+            ('odom', 'base_link'),
+            ('base_link', 'sensor_link'),
+            ('sensor_link', 'laser_link'),
+            ('sensor_link', 'camera_link'),
+            ('camera_link', 'camera_optical_link'),
+            ('sensor_link', 'imu_link'),
+        }
+        self.assertTrue(self.spin_until(
+            lambda: required_tf <= self.tf_pairs, 10.0))
+
+        def stamp_ns(message):
+            return message.header.stamp.sec * 1_000_000_000 + message.header.stamp.nanosec
+
+        streams = {
+            '/odom': list(self.odometry)[-10:],
+            '/scan': list(self.scans)[-10:],
+            '/imu/data': list(self.imu_messages)[-20:],
+            '/camera/image_raw': [item[1] for item in list(self.raw_images)[-10:]],
+            '/camera/image_mono': [item[1] for item in list(self.mono_images)[-10:]],
+        }
+        clock_ns = (self.clocks[-1].clock.sec * 1_000_000_000
+                    + self.clocks[-1].clock.nanosec)
+        self.assertGreater(clock_ns, 0)
+        for topic, messages in streams.items():
+            stamps = [stamp_ns(message) for message in messages]
+            self.assertTrue(all(stamp > 0 for stamp in stamps), topic)
+            self.assertEqual(stamps, sorted(stamps), topic)
+            self.assertLessEqual(stamps[-1], clock_ns + 100_000_000, topic)
+            self.assertLess(clock_ns - stamps[-1], 500_000_000, topic)
+
+        qos_contracts = {
+            '/odom': (ReliabilityPolicy.RELIABLE, DurabilityPolicy.VOLATILE),
+            '/scan': (ReliabilityPolicy.BEST_EFFORT, DurabilityPolicy.VOLATILE),
+            '/imu/data': (ReliabilityPolicy.BEST_EFFORT, DurabilityPolicy.VOLATILE),
+            '/camera/image_raw': (
+                ReliabilityPolicy.BEST_EFFORT, DurabilityPolicy.VOLATILE),
+            '/camera/image_mono': (
+                ReliabilityPolicy.BEST_EFFORT, DurabilityPolicy.VOLATILE),
+        }
+        for topic, (reliability, durability) in qos_contracts.items():
+            publishers = self.node.get_publishers_info_by_topic(topic)
+            self.assertEqual(1, len(publishers), topic)
+            self.assertEqual(reliability, publishers[0].qos_profile.reliability, topic)
+            self.assertEqual(durability, publishers[0].qos_profile.durability, topic)
 
     def test_base_encoder_odometry_and_tf_are_consistent(self):
         # Wait for controller outputs before querying controller_manager. Calling
