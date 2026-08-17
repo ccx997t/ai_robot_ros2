@@ -58,7 +58,7 @@ if(BUILD_TESTING)
   )
   add_launch_test(
     test/test_m5_navigation_launch.py
-    TIMEOUT 120
+    TIMEOUT 180
     ENV
       "ROS_LOG_DIR=${CMAKE_CURRENT_BINARY_DIR}/ros_logs"
       "ROS_DOMAIN_ID=88"

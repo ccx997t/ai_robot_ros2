@@ -17,7 +17,7 @@ from rclpy.time import Time
 from tf2_msgs.msg import TFMessage
 
 
-os.environ['ROS_DOMAIN_ID'] = str(220 + os.getpid() % 20)
+os.environ['ROS_DOMAIN_ID'] = str(140 + os.getpid() % 10)
 os.environ['IGN_PARTITION'] = f'ai_robot_m5_localization_{os.getpid()}'
 
 

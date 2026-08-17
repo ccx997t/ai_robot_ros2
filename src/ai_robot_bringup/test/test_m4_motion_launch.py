@@ -4,7 +4,7 @@ import os
 import time
 import unittest
 
-os.environ['ROS_DOMAIN_ID'] = str(120 + os.getpid() % 80)
+os.environ['ROS_DOMAIN_ID'] = str(120 + os.getpid() % 10)
 os.environ['IGN_PARTITION'] = f'ai_robot_m4_motion_test_{os.getpid()}'
 
 from ament_index_python.packages import get_package_share_directory

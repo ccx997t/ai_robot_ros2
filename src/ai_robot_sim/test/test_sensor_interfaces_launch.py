@@ -6,7 +6,7 @@ import unittest
 
 # Every invocation gets a fresh DDS / Gazebo discovery scope.  This prevents
 # recently terminated launch tests from being observed during rapid reruns.
-os.environ['ROS_DOMAIN_ID'] = str(100 + os.getpid() % 100)
+os.environ['ROS_DOMAIN_ID'] = str(110 + os.getpid() % 10)
 os.environ['IGN_PARTITION'] = f'ai_robot_m3_sensor_test_{os.getpid()}'
 
 from ament_index_python.packages import get_package_share_directory

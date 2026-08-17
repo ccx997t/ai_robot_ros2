@@ -19,7 +19,7 @@ import rclpy
 from rclpy.qos import DurabilityPolicy, QoSProfile, ReliabilityPolicy
 from tf2_msgs.msg import TFMessage
 
-os.environ['ROS_DOMAIN_ID'] = str(200 + os.getpid() % 20)
+os.environ['ROS_DOMAIN_ID'] = str(130 + os.getpid() % 10)
 os.environ['IGN_PARTITION'] = f'ai_robot_m5_mapping_test_{os.getpid()}'
 SAVE_DIR = Path('/tmp/ai_robot_m5_map_test')
 SAVE_PREFIX = SAVE_DIR / 'm5_baseline'
