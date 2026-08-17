@@ -1,0 +1,41 @@
+scenario:
+  name: m5_navigation
+  frame_id: map
+  world_file: m5_navigation.sdf
+  boundary:
+    x_min: -6.0
+    x_max: 6.0
+    y_min: -5.0
+    y_max: 5.0
+  robot:
+    footprint:
+      - [-0.26, -0.20]
+      - [-0.26, 0.20]
+      - [0.26, 0.20]
+      - [0.26, -0.20]
+    spawn: {x: 0.0, y: 0.0, yaw: 0.0}
+    minimum_static_clearance: 0.35
+  goals:
+    east_room: {x: 4.3, y: -3.2, yaw: 1.57079632679, reachable: true}
+    north_room: {x: 3.8, y: 3.4, yaw: 3.14159265359, reachable: true}
+    west_bay: {x: -4.4, y: 2.8, yaw: -1.57079632679, reachable: true}
+    enclosed_pocket: {x: -3.2, y: -2.5, yaw: 0.0, reachable: false}
+  temporary_obstacle:
+    name: temporary_route_blocker
+    pose: {x: 2.4, y: -2.2, z: 0.4, yaw: 0.0}
+    size: [0.7, 0.7, 0.8]
+    initially_present: false
+  static_models:
+    boundary_north: {pose: [0.0, 5.0, 0.5, 0.0], size: [12.2, 0.2, 1.0]}
+    boundary_south: {pose: [0.0, -5.0, 0.5, 0.0], size: [12.2, 0.2, 1.0]}
+    boundary_east: {pose: [6.0, 0.0, 0.5, 0.0], size: [0.2, 10.2, 1.0]}
+    boundary_west: {pose: [-6.0, 0.0, 0.5, 0.0], size: [0.2, 10.2, 1.0]}
+    center_vertical: {pose: [0.8, 1.5, 0.5, 0.0], size: [0.2, 4.0, 1.0]}
+    northwest_horizontal: {pose: [-2.5, 1.0, 0.5, 0.0], size: [3.0, 0.2, 1.0]}
+    southeast_horizontal: {pose: [3.4, -1.0, 0.5, 0.0], size: [3.2, 0.2, 1.0]}
+    landmark_tall: {pose: [4.7, 2.0, 0.75, 0.0], size: [0.5, 0.5, 1.5]}
+    landmark_wide: {pose: [-4.5, 4.0, 0.35, 0.0], size: [1.2, 0.4, 0.7]}
+    pocket_north: {pose: [-3.2, -1.7, 0.5, 0.0], size: [1.8, 0.2, 1.0]}
+    pocket_south: {pose: [-3.2, -3.3, 0.5, 0.0], size: [1.8, 0.2, 1.0]}
+    pocket_east: {pose: [-2.3, -2.5, 0.5, 0.0], size: [0.2, 1.8, 1.0]}
+    pocket_west: {pose: [-4.1, -2.5, 0.5, 0.0], size: [0.2, 1.8, 1.0]}

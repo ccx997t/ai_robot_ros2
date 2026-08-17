@@ -1,10 +1,23 @@
 from pathlib import Path
+import math
 import xml.etree.ElementTree as ET
 
 import yaml
 
 
 PACKAGE_DIR = Path(__file__).parents[1]
+
+
+def _box_contract(model):
+    pose = [float(value) for value in model.find('pose').text.split()]
+    size = [float(value) for value in model.find(
+        'link/collision/geometry/box/size').text.split()]
+    return pose, size
+
+
+def _point_clear_of_box(x, y, pose, size, clearance=0.0):
+    return (abs(x - pose[0]) > size[0] / 2.0 + clearance or
+            abs(y - pose[1]) > size[1] / 2.0 + clearance)
 
 
 def test_world_is_valid_sdf_with_required_systems():
@@ -22,6 +35,75 @@ def test_world_is_valid_sdf_with_required_systems():
     target_size = target.find(
         "link/collision/geometry/box/size").text.split()
     assert target_size == ['0.5', '0.5', '1.0']
+
+
+def test_m5_navigation_world_matches_scenario_contract():
+    contract = yaml.safe_load(
+        (PACKAGE_DIR / 'config' / 'm5_scenario.yaml').read_text())['scenario']
+    root = ET.parse(PACKAGE_DIR / 'worlds' / contract['world_file']).getroot()
+    world = root.find('world')
+    assert world.attrib['name'] == contract['name'] == 'm5_navigation'
+    assert contract['frame_id'] == 'map'
+
+    filenames = {plugin.attrib['filename'] for plugin in world.findall('plugin')}
+    assert {
+        'ignition-gazebo-physics-system',
+        'ignition-gazebo-user-commands-system',
+        'ignition-gazebo-scene-broadcaster-system',
+        'ignition-gazebo-sensors-system',
+        'ignition-gazebo-imu-system',
+    }.issubset(filenames)
+    assert world.find("model[@name='ground_plane']") is not None
+
+    static_boxes = {}
+    for name, expected in contract['static_models'].items():
+        model = world.find(f"model[@name='{name}']")
+        assert model is not None, name
+        assert model.find('static').text == 'true'
+        pose, size = _box_contract(model)
+        assert pose[:3] == expected['pose'][:3]
+        assert math.isclose(pose[5], expected['pose'][3], abs_tol=1e-12)
+        assert size == expected['size']
+        static_boxes[name] = (pose, size)
+
+    footprint = contract['robot']['footprint']
+    assert footprint == [
+        [-0.26, -0.20], [-0.26, 0.20],
+        [0.26, 0.20], [0.26, -0.20],
+    ]
+    boundary = contract['boundary']
+    points = [contract['robot']['spawn'], *contract['goals'].values()]
+    obstacle_pose = contract['temporary_obstacle']['pose']
+    points.append(obstacle_pose)
+    for point in points:
+        assert boundary['x_min'] < point['x'] < boundary['x_max']
+        assert boundary['y_min'] < point['y'] < boundary['y_max']
+
+    clearance = contract['robot']['minimum_static_clearance']
+    clear_points = [contract['robot']['spawn']]
+    clear_points.extend(goal for goal in contract['goals'].values()
+                        if goal['reachable'])
+    clear_points.append(obstacle_pose)
+    interior_boxes = {
+        name: box for name, box in static_boxes.items()
+        if not name.startswith('boundary_')
+    }
+    for point in clear_points:
+        assert all(_point_clear_of_box(
+            point['x'], point['y'], pose, size, clearance)
+            for pose, size in interior_boxes.values())
+
+    pocket = contract['goals']['enclosed_pocket']
+    assert pocket['reachable'] is False
+    assert -4.0 < pocket['x'] < -2.4
+    assert -3.2 < pocket['y'] < -1.8
+    assert all(contract['goals'][name]['reachable'] for name in (
+        'east_room', 'north_room', 'west_bay'))
+
+    temporary = contract['temporary_obstacle']
+    assert temporary['initially_present'] is False
+    assert temporary['size'] == [0.7, 0.7, 0.8]
+    assert world.find(f"model[@name='{temporary['name']}']") is None
 
 
 def test_diff_drive_controller_contract():

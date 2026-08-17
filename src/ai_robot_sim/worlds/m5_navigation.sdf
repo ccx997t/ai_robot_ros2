@@ -1,0 +1,48 @@
+<?xml version="1.0"?>
+<sdf version="1.8">
+  <world name="m5_navigation">
+    <physics name="1ms" type="ignored">
+      <max_step_size>0.001</max_step_size>
+      <real_time_factor>1.0</real_time_factor>
+    </physics>
+    <plugin filename="ignition-gazebo-physics-system" name="ignition::gazebo::systems::Physics"/>
+    <plugin filename="ignition-gazebo-user-commands-system" name="ignition::gazebo::systems::UserCommands"/>
+    <plugin filename="ignition-gazebo-scene-broadcaster-system" name="ignition::gazebo::systems::SceneBroadcaster"/>
+    <plugin filename="ignition-gazebo-sensors-system" name="ignition::gazebo::systems::Sensors">
+      <render_engine>ogre2</render_engine>
+    </plugin>
+    <plugin filename="ignition-gazebo-imu-system" name="ignition::gazebo::systems::Imu"/>
+    <gravity>0 0 -9.8</gravity>
+    <light type="directional" name="sun">
+      <pose>0 0 10 0 0 0</pose>
+      <direction>-0.5 0.1 -0.9</direction>
+    </light>
+
+    <model name="ground_plane">
+      <static>true</static>
+      <link name="link">
+        <collision name="collision"><geometry><plane><normal>0 0 1</normal><size>100 100</size></plane></geometry></collision>
+        <visual name="visual"><geometry><plane><normal>0 0 1</normal><size>100 100</size></plane></geometry></visual>
+      </link>
+    </model>
+
+    <!-- Every named box below is frozen in config/m5_scenario.yaml. -->
+    <model name="boundary_north"><static>true</static><pose>0 5 0.5 0 0 0</pose><link name="link"><collision name="collision"><geometry><box><size>12.2 0.2 1.0</size></box></geometry></collision><visual name="visual"><geometry><box><size>12.2 0.2 1.0</size></box></geometry></visual></link></model>
+    <model name="boundary_south"><static>true</static><pose>0 -5 0.5 0 0 0</pose><link name="link"><collision name="collision"><geometry><box><size>12.2 0.2 1.0</size></box></geometry></collision><visual name="visual"><geometry><box><size>12.2 0.2 1.0</size></box></geometry></visual></link></model>
+    <model name="boundary_east"><static>true</static><pose>6 0 0.5 0 0 0</pose><link name="link"><collision name="collision"><geometry><box><size>0.2 10.2 1.0</size></box></geometry></collision><visual name="visual"><geometry><box><size>0.2 10.2 1.0</size></box></geometry></visual></link></model>
+    <model name="boundary_west"><static>true</static><pose>-6 0 0.5 0 0 0</pose><link name="link"><collision name="collision"><geometry><box><size>0.2 10.2 1.0</size></box></geometry></collision><visual name="visual"><geometry><box><size>0.2 10.2 1.0</size></box></geometry></visual></link></model>
+
+    <!-- Asymmetric interior geometry prevents rotationally ambiguous maps. -->
+    <model name="center_vertical"><static>true</static><pose>0.8 1.5 0.5 0 0 0</pose><link name="link"><collision name="collision"><geometry><box><size>0.2 4.0 1.0</size></box></geometry></collision><visual name="visual"><geometry><box><size>0.2 4.0 1.0</size></box></geometry></visual></link></model>
+    <model name="northwest_horizontal"><static>true</static><pose>-2.5 1.0 0.5 0 0 0</pose><link name="link"><collision name="collision"><geometry><box><size>3.0 0.2 1.0</size></box></geometry></collision><visual name="visual"><geometry><box><size>3.0 0.2 1.0</size></box></geometry></visual></link></model>
+    <model name="southeast_horizontal"><static>true</static><pose>3.4 -1.0 0.5 0 0 0</pose><link name="link"><collision name="collision"><geometry><box><size>3.2 0.2 1.0</size></box></geometry></collision><visual name="visual"><geometry><box><size>3.2 0.2 1.0</size></box></geometry></visual></link></model>
+    <model name="landmark_tall"><static>true</static><pose>4.7 2.0 0.75 0 0 0</pose><link name="link"><collision name="collision"><geometry><box><size>0.5 0.5 1.5</size></box></geometry></collision><visual name="visual"><geometry><box><size>0.5 0.5 1.5</size></box></geometry></visual></link></model>
+    <model name="landmark_wide"><static>true</static><pose>-4.5 4.0 0.35 0 0 0</pose><link name="link"><collision name="collision"><geometry><box><size>1.2 0.4 0.7</size></box></geometry></collision><visual name="visual"><geometry><box><size>1.2 0.4 0.7</size></box></geometry></visual></link></model>
+
+    <!-- Closed pocket provides a deterministic unreachable goal. -->
+    <model name="pocket_north"><static>true</static><pose>-3.2 -1.7 0.5 0 0 0</pose><link name="link"><collision name="collision"><geometry><box><size>1.8 0.2 1.0</size></box></geometry></collision><visual name="visual"><geometry><box><size>1.8 0.2 1.0</size></box></geometry></visual></link></model>
+    <model name="pocket_south"><static>true</static><pose>-3.2 -3.3 0.5 0 0 0</pose><link name="link"><collision name="collision"><geometry><box><size>1.8 0.2 1.0</size></box></geometry></collision><visual name="visual"><geometry><box><size>1.8 0.2 1.0</size></box></geometry></visual></link></model>
+    <model name="pocket_east"><static>true</static><pose>-2.3 -2.5 0.5 0 0 0</pose><link name="link"><collision name="collision"><geometry><box><size>0.2 1.8 1.0</size></box></geometry></collision><visual name="visual"><geometry><box><size>0.2 1.8 1.0</size></box></geometry></visual></link></model>
+    <model name="pocket_west"><static>true</static><pose>-4.1 -2.5 0.5 0 0 0</pose><link name="link"><collision name="collision"><geometry><box><size>0.2 1.8 1.0</size></box></geometry></collision><visual name="visual"><geometry><box><size>0.2 1.8 1.0</size></box></geometry></visual></link></model>
+  </world>
+</sdf>
