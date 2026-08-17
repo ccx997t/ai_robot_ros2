@@ -1,4 +1,4 @@
-"""S1-M5 AMCL localization entry point with exclusive map -> odom ownership."""
+"""S1-M5 lifecycle-managed Nav2 planning and control entry point."""
 
 from pathlib import Path
 
@@ -19,44 +19,45 @@ def generate_launch_description():
     world_file = LaunchConfiguration('world_file')
     map_file = LaunchConfiguration('map_file')
     amcl_params_file = LaunchConfiguration('amcl_params_file')
-    set_initial_pose = LaunchConfiguration('set_initial_pose')
+    nav2_params_file = LaunchConfiguration('nav2_params_file')
     sim_time_text = PythonExpression([
         "'true' if '", mode, "' == 'sim' else 'false'"])
     use_sim_time = ParameterValue(sim_time_text, value_type=bool)
     sim_condition = IfCondition(PythonExpression(["'", mode, "' == 'sim'"]))
 
-    platform = IncludeLaunchDescription(
+    localization = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(
-            str(share / 'launch' / 'm4_bringup.launch.py')),
+            str(share / 'launch' / 'localization.launch.py')),
         launch_arguments={
             'mode': mode,
             'world_file': world_file,
+            'map_file': map_file,
+            'amcl_params_file': amcl_params_file,
+            'set_initial_pose': 'true',
         }.items(),
     )
-    map_server = Node(
-        package='nav2_map_server', executable='map_server',
-        name='m5_map_server',
-        parameters=[{'yaml_filename': map_file, 'use_sim_time': use_sim_time}],
-        condition=sim_condition,
-        output='screen',
-    )
-    amcl = Node(
-        package='nav2_amcl', executable='amcl', name='amcl',
-        parameters=[amcl_params_file, {
-            'use_sim_time': use_sim_time,
-            'set_initial_pose': ParameterValue(
-                set_initial_pose, value_type=bool),
-        }],
-        condition=sim_condition,
-        output='screen',
-    )
+    managed_nodes = [
+        ('nav2_planner', 'planner_server', 'planner_server'),
+        ('nav2_controller', 'controller_server', 'controller_server'),
+        ('nav2_behaviors', 'behavior_server', 'behavior_server'),
+        ('nav2_bt_navigator', 'bt_navigator', 'bt_navigator'),
+    ]
+    nav_nodes = [
+        Node(
+            package=package, executable=executable, name=name,
+            parameters=[nav2_params_file, {'use_sim_time': use_sim_time}],
+            condition=sim_condition,
+            output='screen',
+        )
+        for package, executable, name in managed_nodes
+    ]
     lifecycle = Node(
         package='nav2_lifecycle_manager', executable='lifecycle_manager',
-        name='lifecycle_manager_localization',
+        name='lifecycle_manager_navigation',
         parameters=[{
             'autostart': True,
             'use_sim_time': use_sim_time,
-            'node_names': ['m5_map_server', 'amcl'],
+            'node_names': [name for _, _, name in managed_nodes],
         }],
         condition=sim_condition,
         output='screen',
@@ -74,10 +75,9 @@ def generate_launch_description():
             'amcl_params_file',
             default_value=str(share / 'config' / 'amcl_m5.yaml')),
         DeclareLaunchArgument(
-            'set_initial_pose', default_value='false',
-            choices=['true', 'false']),
-        platform,
-        map_server,
-        amcl,
+            'nav2_params_file',
+            default_value=str(share / 'config' / 'nav2_m5.yaml')),
+        localization,
+        *nav_nodes,
         lifecycle,
     ])

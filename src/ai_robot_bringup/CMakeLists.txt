@@ -11,6 +11,8 @@ if(BUILD_TESTING)
   ament_add_pytest_test(m5_map_artifact_test test/test_m5_map_artifact.py)
   ament_add_pytest_test(
     m5_localization_contract_test test/test_m5_localization_contract.py)
+  ament_add_pytest_test(
+    m5_navigation_contract_test test/test_m5_navigation_contract.py)
   add_launch_test(
     test/test_bringup_launch.py
     TIMEOUT 30
@@ -54,6 +56,14 @@ if(BUILD_TESTING)
       "ROS_DOMAIN_ID=87"
       "IGN_PARTITION=ai_robot_m5_localization_test"
   )
+  add_launch_test(
+    test/test_m5_navigation_launch.py
+    TIMEOUT 120
+    ENV
+      "ROS_LOG_DIR=${CMAKE_CURRENT_BINARY_DIR}/ros_logs"
+      "ROS_DOMAIN_ID=88"
+      "IGN_PARTITION=ai_robot_m5_navigation_test"
+  )
   set_tests_properties(
     test_test_bringup_launch.py
     test_test_m4_fault_safety_launch.py
@@ -61,6 +71,7 @@ if(BUILD_TESTING)
     test_test_m5_mapping_launch.py
     test_test_m5_map_reload_launch.py
     test_test_m5_localization_launch.py
+    test_test_m5_navigation_launch.py
     PROPERTIES RUN_SERIAL TRUE
   )
 endif()
