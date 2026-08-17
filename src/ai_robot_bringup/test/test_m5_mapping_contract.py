@@ -22,6 +22,8 @@ def test_slam_is_the_mapping_tf_authority_and_uses_project_parameters():
     assert "executable='async_slam_toolbox_node'" in source
     assert "name='slam_toolbox'" in source
     assert "'slam_toolbox_m5.yaml'" in source
+    assert "executable='map_saver_server'" in source
+    assert "'node_names': ['map_saver']" in source
 
     config = yaml.safe_load(
         (PACKAGE_DIR / 'config' / 'slam_toolbox_m5.yaml').read_text())

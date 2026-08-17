@@ -40,6 +40,29 @@ def generate_launch_description():
         condition=sim_condition,
         output='screen',
     )
+    map_saver = Node(
+        package='nav2_map_server', executable='map_saver_server',
+        name='map_saver',
+        parameters=[{
+            'use_sim_time': True,
+            'save_map_timeout': 5.0,
+            'free_thresh_default': 0.19,
+            'occupied_thresh_default': 0.65,
+        }],
+        condition=sim_condition,
+        output='screen',
+    )
+    map_saver_lifecycle = Node(
+        package='nav2_lifecycle_manager', executable='lifecycle_manager',
+        name='lifecycle_manager_mapping',
+        parameters=[{
+            'use_sim_time': True,
+            'autostart': True,
+            'node_names': ['map_saver'],
+        }],
+        condition=sim_condition,
+        output='screen',
+    )
 
     return LaunchDescription([
         DeclareLaunchArgument(
@@ -55,4 +78,6 @@ def generate_launch_description():
         ),
         m4_baseline,
         slam,
+        map_saver,
+        map_saver_lifecycle,
     ])
