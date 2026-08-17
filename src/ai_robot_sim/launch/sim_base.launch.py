@@ -16,7 +16,7 @@ def generate_launch_description():
     ros_gz_share = Path(get_package_share_directory('ros_gz_sim'))
     controllers = LaunchConfiguration('controllers_file')
     model = description_share / 'urdf' / 'ai_robot.urdf.xacro'
-    world = sim_share / 'worlds' / 'm2_test.sdf'
+    world = LaunchConfiguration('world_file')
     use_sim_time = LaunchConfiguration('use_sim_time')
     enable_lidar = LaunchConfiguration('enable_lidar')
     enable_camera = LaunchConfiguration('enable_camera')
@@ -33,7 +33,7 @@ def generate_launch_description():
     )
     gazebo = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(str(ros_gz_share / 'launch' / 'gz_sim.launch.py')),
-        launch_arguments={'gz_args': ['-r -s ', str(world)]}.items(),
+        launch_arguments={'gz_args': ['-r -s ', world]}.items(),
     )
     state_publisher = Node(
         package='robot_state_publisher', executable='robot_state_publisher',
@@ -64,6 +64,9 @@ def generate_launch_description():
         DeclareLaunchArgument(
             'controllers_file',
             default_value=str(sim_share / 'config' / 'controllers.yaml'),
+        ),
+        DeclareLaunchArgument(
+            'world_file', default_value=str(sim_share / 'worlds' / 'm2_test.sdf'),
         ),
         DeclareLaunchArgument('enable_lidar', default_value='false', choices=['true', 'false']),
         DeclareLaunchArgument('enable_camera', default_value='false', choices=['true', 'false']),

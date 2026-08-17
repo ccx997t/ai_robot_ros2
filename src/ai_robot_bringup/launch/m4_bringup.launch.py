@@ -23,6 +23,7 @@ from launch_ros.parameter_descriptions import ParameterValue
 
 def generate_launch_description():
     mode = LaunchConfiguration('mode')
+    world_file = LaunchConfiguration('world_file')
     sim_time_text = PythonExpression(["'true' if '", mode, "' == 'sim' else 'false'"])
     use_sim_time = ParameterValue(sim_time_text, value_type=bool)
     common_parameters = {'mode': mode, 'use_sim_time': use_sim_time}
@@ -54,6 +55,7 @@ def generate_launch_description():
         launch_arguments={
             'use_sim_time': sim_time_text,
             'controllers_file': str(sim_share / 'config' / 'controllers_m4.yaml'),
+            'world_file': world_file,
         }.items(),
         condition=sim_condition,
     )
@@ -97,6 +99,9 @@ def generate_launch_description():
 
     return LaunchDescription([
         DeclareLaunchArgument('mode', default_value='sim', choices=['sim', 'real']),
+        DeclareLaunchArgument(
+            'world_file', default_value=str(sim_share / 'worlds' / 'm2_test.sdf'),
+        ),
         *safety_layer,
         simulation,
         wheel_odom_relay,

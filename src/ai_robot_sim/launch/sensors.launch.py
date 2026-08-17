@@ -31,6 +31,7 @@ def generate_launch_description():
         launch_arguments={
             'use_sim_time': LaunchConfiguration('use_sim_time'),
             'controllers_file': LaunchConfiguration('controllers_file'),
+            'world_file': LaunchConfiguration('world_file'),
             'enable_lidar': 'true',
             'enable_camera': 'true',
             'enable_imu': 'true',
@@ -64,6 +65,9 @@ def generate_launch_description():
         DeclareLaunchArgument(
             'controllers_file',
             default_value=str(sim_share / 'config' / 'controllers.yaml'),
+        ),
+        DeclareLaunchArgument(
+            'world_file', default_value=str(sim_share / 'worlds' / 'm2_test.sdf'),
         ),
         base,
         bridge,
