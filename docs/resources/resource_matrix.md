@@ -12,8 +12,8 @@
 | 激光雷达 | Gazebo 6.18.0传感器、`ros_gz_bridge` 0.244.25 | Gazebo GPU雷达与独立桥接 | 品牌驱动/适配节点 | `/scan` | 类型、QoS、频率、Frame | M3仿真依赖已准入，功能待实现 |
 | 相机 | Gazebo 6.18.0、`ros_gz_image` 0.244.25、`image_transport` 3.1.13 | Gazebo相机、桥接与轻量灰度节点 | 品牌驱动/适配节点＋同一灰度契约 | `/camera/image_raw`、`/camera/camera_info`、`/camera/image_mono` | 图像、CameraInfo、编码、尺寸、频率、时间戳、延迟 | M3原始接口与M4最小处理链已验收 |
 | IMU与融合 | Gazebo 6.18.0 IMU、`ros_gz_bridge` 0.244.25；`robot_localization` 3.5.4 | Gazebo IMU桥接＋`ekf_node` | 品牌IMU/适配节点＋同一融合配置 | `/imu/data`、融合里程计 | 协方差、频率、Frame、异常输入 | M3原始IMU已验收；M4融合依赖已准入 |
-| SLAM | `slam_toolbox`候选 | 复用标准接口 | 复用标准接口 | 地图及定位相关标准接口 | 固定数据集建图与重载 | 候选，M5前准入 |
-| 导航 | Nav2、AMCL候选 | 复用标准接口 | 复用标准接口 | Nav2 Action、路径和状态 | 到点、取消、超时和不可达 | 候选，M5前准入 |
+| SLAM | `slam_toolbox` 2.6.10 | 标准二维激光SLAM节点 | 复用同一标准接口，实体参数待准入 | `/map`、地图服务、`map -> odom` | 固定场景建图、保存、重载和TF唯一性 | M5依赖已准入，功能待验收 |
+| 导航 | Navigation2与AMCL 1.1.20 | `map_server`、AMCL、规划、控制、行为树与恢复组件 | 复用同一标准接口，实体参数待准入 | `NavigateToPose`、`/amcl_pose`、路径、状态及安全速度入口 | 到点、避障、取消、超时、定位偏差和不可达 | M5依赖已准入，功能待验收 |
 | 数据证据 | rosbag2 0.15.16 | 共用 | 共用 | 记录选定Topic | 记录、信息检查、回放 | 已准入 |
 | Launch测试 | `launch_testing` 1.0.14 | 共用 | 共用 | 节点图和接口断言 | `colcon test` | 已准入 |
 
