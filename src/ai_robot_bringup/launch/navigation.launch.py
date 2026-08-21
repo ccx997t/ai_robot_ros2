@@ -34,6 +34,7 @@ def generate_launch_description():
             'map_file': map_file,
             'amcl_params_file': amcl_params_file,
             'set_initial_pose': 'true',
+            'scan_output_topic': LaunchConfiguration('scan_output_topic'),
         }.items(),
     )
     managed_nodes = [
@@ -77,6 +78,7 @@ def generate_launch_description():
         DeclareLaunchArgument(
             'nav2_params_file',
             default_value=str(share / 'config' / 'nav2_m5.yaml')),
+        DeclareLaunchArgument('scan_output_topic', default_value='/scan'),
         localization,
         *nav_nodes,
         lifecycle,

@@ -69,9 +69,12 @@ def generate_launch_description():
         DeclareLaunchArgument(
             'world_file', default_value=str(sim_share / 'worlds' / 'm2_test.sdf'),
         ),
+        DeclareLaunchArgument('scan_output_topic', default_value='/scan'),
         base,
         bridge,
-        adapter('lidar_adapter', 'scan', '/sim/scan', '/scan', 'laser_link', 10.0),
+        adapter(
+            'lidar_adapter', 'scan', '/sim/scan',
+            LaunchConfiguration('scan_output_topic'), 'laser_link', 10.0),
         adapter('camera_image_adapter', 'image', '/sim/camera/image_raw',
                 '/camera/image_raw', 'camera_optical_link', 15.0),
         adapter('camera_info_adapter', 'camera_info', '/sim/camera/camera_info',

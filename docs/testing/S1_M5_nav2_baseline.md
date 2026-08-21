@@ -2,7 +2,7 @@
 
 ## 验收范围
 
-本基线关闭Nav2全局规划器、局部控制器、全局/局部代价地图、生命周期启动配置，以及局部地图范围内的固定路线和障碍场景。任务取消与异常恢复仍由后续场景验收关闭。
+本基线关闭Nav2全局规划器、局部控制器、全局/局部代价地图、生命周期启动配置，以及局部地图范围内的固定路线、障碍、任务取消和雷达超时恢复场景。
 
 ## 启动与配置
 
@@ -75,7 +75,28 @@ colcon test --packages-select ai_robot_bringup \
 
 ## 当前边界
 
-本项已证明局部固定路线到点、固定障碍拒绝、临时障碍入图与绕行、不可达目标拒绝。当前Git地图仍是起点附近的局部建图结果，因此完整世界的长路线成功率、全局到点误差、长程漂移、绑架恢复、取消和传感器异常恢复仍需后续验收。
+本项已证明局部固定路线到点、固定障碍拒绝、临时障碍入图与绕行、不可达目标拒绝。当前Git地图仍是起点附近的局部建图结果，因此完整世界的长路线成功率、全局到点误差、长程漂移和绑架恢复仍需后续验收。
+
+## 导航取消、雷达超时与恢复场景
+
+专用入口`navigation_fault_recovery.launch.py`仅在`mode:=sim`下启用。它将Gazebo雷达适配输出隔离为`/m5_fault/scan_source`，再由可恢复丢包中继发布公共`/scan`；独立监控器只订阅公共接口并向`/diagnostics`发布`sensors/navigation_lidar`，因此诊断结论来自Nav2实际消费的数据流。
+
+自动launch测试验证：
+
+- 实际`NavigateToPose`产生非零命令后取消，Action最终状态为`CANCELED`，安全链底盘出口出现零速。
+- 启用雷达丢包后，公共`/scan`停止增长，`fault_injection/scan`为`WARN`，`sensors/navigation_lidar`为`STALE`且消息为`sensor data stale or not received`。
+- 关闭丢包后公共雷达恢复，故障注入器和传感器诊断均回到`OK`。
+- 恢复后重新发送`local_west`和`local_home`两个导航目标，均返回`SUCCEEDED`。
+
+执行命令：
+
+```bash
+colcon test --packages-select ai_robot_bringup \
+  --ctest-args -R test_test_m5_navigation_fault_recovery_launch.py \
+  --output-on-failure
+```
+
+该场景关闭仿真范围内的导航取消、公共雷达超时诊断传播及数据恢复后再次导航；它不宣称当前Nav2会在活动任务中仅凭雷达超时诊断自动触发急停，实体传感器断线保护仍需硬件阶段验证。
 
 ## 实际导航安全场景
 
