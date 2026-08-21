@@ -106,6 +106,27 @@ def test_m5_navigation_world_matches_scenario_contract():
     assert world.find(f"model[@name='{temporary['name']}']") is None
 
 
+def test_m5_local_navigation_acceptance_contract():
+    contract = yaml.safe_load(
+        (PACKAGE_DIR / 'config' / 'm5_scenario.yaml').read_text())['scenario']
+    acceptance = contract['local_acceptance']
+    assert acceptance['repeat_count'] == 2
+    assert [point['name'] for point in acceptance['route']] == [
+        'local_west', 'local_home']
+    assert acceptance['static_blocked_goal'] == {
+        'x': 0.75, 'y': 0.0, 'yaw': 0.0}
+    assert acceptance['unreachable_goal'] == {
+        'x': -3.2, 'y': -2.5, 'yaw': 0.0}
+
+    blocker = acceptance['temporary_blocker_pose']
+    blocked_goal = acceptance['temporary_detour_goal']
+    assert blocker['z'] == contract['temporary_obstacle']['size'][2] / 2.0
+    assert blocked_goal['x'] < blocker['x'] < 0.0
+    assert blocked_goal['y'] == blocker['y'] == 0.0
+    assert (PACKAGE_DIR / 'models' / 'temporary_route_blocker' /
+            'model.sdf').is_file()
+
+
 def test_diff_drive_controller_contract():
     config = yaml.safe_load((PACKAGE_DIR / 'config' / 'controllers.yaml').read_text())
     params = config['base_controller']['ros__parameters']

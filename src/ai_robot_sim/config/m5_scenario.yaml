@@ -25,6 +25,15 @@ scenario:
     pose: {x: 2.4, y: -2.2, z: 0.4, yaw: 0.0}
     size: [0.7, 0.7, 0.8]
     initially_present: false
+  local_acceptance:
+    repeat_count: 2
+    route:
+      - {name: local_west, x: -0.6, y: 0.0, yaw: 0.0}
+      - {name: local_home, x: 0.0, y: 0.0, yaw: 0.0}
+    static_blocked_goal: {x: 0.75, y: 0.0, yaw: 0.0}
+    temporary_blocker_pose: {x: -1.0, y: 0.0, z: 0.4, yaw: 0.0}
+    temporary_detour_goal: {x: -1.6, y: 0.0, yaw: 0.0}
+    unreachable_goal: {x: -3.2, y: -2.5, yaw: 0.0}
   static_models:
     boundary_north: {pose: [0.0, 5.0, 0.5, 0.0], size: [12.2, 0.2, 1.0]}
     boundary_south: {pose: [0.0, -5.0, 0.5, 0.0], size: [12.2, 0.2, 1.0]}

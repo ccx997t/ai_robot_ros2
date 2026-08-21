@@ -2,7 +2,7 @@
 
 ## 验收范围
 
-本基线关闭Nav2全局规划器、局部控制器、全局/局部代价地图和生命周期启动配置。固定路线到点、动态避障、任务取消与异常恢复仍由后续场景验收关闭。
+本基线关闭Nav2全局规划器、局部控制器、全局/局部代价地图、生命周期启动配置，以及局部地图范围内的固定路线和障碍场景。任务取消与异常恢复仍由后续场景验收关闭。
 
 ## 启动与配置
 
@@ -24,7 +24,7 @@ ros2 launch ai_robot_bringup navigation.launch.py mode:=sim
 | 对象 | 配置基线 |
 |---|---|
 | 全局规划 | NavFn `GridBased`，5 Hz，不允许规划进入未知区 |
-| 局部控制 | DWB `FollowPath`，15 Hz，最大线速度0.25 m/s、角速度0.70 rad/s |
+| 局部控制 | DWB `FollowPath`，15 Hz，线速度-0.20至0.25 m/s、最大角速度0.70 rad/s |
 | 机器人轮廓 | 保守矩形0.52 × 0.40 m |
 | 局部代价地图 | `odom`，4 × 4 m滚动窗口，0.05 m分辨率，障碍层和膨胀层 |
 | 全局代价地图 | `map`，0.05 m分辨率，静态层、障碍层和膨胀层 |
@@ -53,9 +53,29 @@ colcon test --packages-select ai_robot_bringup \
 
 ROS 2动态测试需要DDS创建本机UDP socket；受限沙箱中出现`Operation not permitted`属于执行环境限制，应在允许本机ROS 2通信的终端执行。
 
+## 固定路线与障碍自动场景
+
+`test_m5_navigation_scenarios_launch.py`在独立Gazebo/Nav2进程中验证：
+
+- 固定局部路线`local_west(-0.6, 0.0)`与`local_home(0.0, 0.0)`往返两轮，4个`NavigateToPose`目标全部返回`SUCCEEDED`。
+- 为适配起点东侧固定墙和差速底盘，DWB允许最低-0.20 m/s的受控倒车；命令仍经公共安全链，绝对速度不超过既有上限。
+- 固定墙目标落在致命占用区，`ComputePathToPose`明确返回`ABORTED`且无路径。
+- 测试运行时通过Gazebo用户命令生成0.7 × 0.7 × 0.8 m实体障碍；雷达可见表面进入全局障碍层，重新规划成功且路径中心不穿过障碍几何范围。
+- 四面封闭且位于当前已知自由空间分量之外的目标返回`ABORTED`且无路径。
+
+公开的`nav_msgs/msg/OccupancyGrid`代价值使用0至100量纲；自动断言以99作为致命占用下限，未混用Costmap2D内部0至255量纲。
+
+执行命令：
+
+```bash
+colcon test --packages-select ai_robot_bringup \
+  --ctest-args -R test_test_m5_navigation_scenarios_launch.py \
+  --output-on-failure
+```
+
 ## 当前边界
 
-本项证明Nav2组件能够在既有地图、定位、TF和安全链上完成配置与激活，并发布有效代价地图；尚不证明目标可达率、到点误差、路径耗时、临时障碍绕行、取消停车或异常恢复结果。
+本项已证明局部固定路线到点、固定障碍拒绝、临时障碍入图与绕行、不可达目标拒绝。当前Git地图仍是起点附近的局部建图结果，因此完整世界的长路线成功率、全局到点误差、长程漂移、绑架恢复、取消和传感器异常恢复仍需后续验收。
 
 ## 实际导航安全场景
 
