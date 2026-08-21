@@ -20,6 +20,7 @@ def test_planner_controller_and_safety_limits():
     assert planner['GridBased']['allow_unknown'] is False
     assert controller['controller_plugins'] == ['FollowPath']
     assert follow['plugin'] == 'dwb_core::DWBLocalPlanner'
+    assert -0.30 <= follow['min_vel_x'] <= 0.0
     assert 0.0 < follow['max_vel_x'] <= 0.30
     assert 0.0 < follow['max_vel_theta'] <= 0.80
     assert follow['acc_lim_x'] <= 0.60
@@ -58,3 +59,16 @@ def test_navigation_entry_and_lifecycle_contract():
     assert "('nav2_bt_navigator', 'bt_navigator'" in source
     assert 'lifecycle_manager_navigation' in source
     assert 'slam_toolbox' not in source
+
+
+def test_navigation_fault_recovery_entry_is_isolated_and_recoverable():
+    source = (
+        ROOT / 'launch' / 'navigation_fault_recovery.launch.py').read_text()
+    navigation = (ROOT / 'launch' / 'navigation.launch.py').read_text()
+    assert "choices=['sim', 'real']" in source
+    assert "'scan_output_topic': scan_source" in source
+    assert "'fault_mode': 'drop'" in source
+    assert "'input_topic': '/scan'" in source
+    assert "'diagnostic_name': 'navigation_lidar'" in source
+    assert "'monitor_only': True" in source
+    assert "DeclareLaunchArgument('scan_output_topic'" in navigation

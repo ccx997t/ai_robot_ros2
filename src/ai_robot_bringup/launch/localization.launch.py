@@ -31,6 +31,7 @@ def generate_launch_description():
         launch_arguments={
             'mode': mode,
             'world_file': world_file,
+            'scan_output_topic': LaunchConfiguration('scan_output_topic'),
         }.items(),
     )
     map_server = Node(
@@ -76,6 +77,7 @@ def generate_launch_description():
         DeclareLaunchArgument(
             'set_initial_pose', default_value='false',
             choices=['true', 'false']),
+        DeclareLaunchArgument('scan_output_topic', default_value='/scan'),
         platform,
         map_server,
         amcl,

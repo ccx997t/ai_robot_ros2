@@ -22,8 +22,8 @@ controller_server:
     controller_plugins: [FollowPath]
     progress_checker:
       plugin: nav2_controller::SimpleProgressChecker
-      required_movement_radius: 0.20
-      movement_time_allowance: 10.0
+      required_movement_radius: 0.05
+      movement_time_allowance: 20.0
     general_goal_checker:
       plugin: nav2_controller::SimpleGoalChecker
       stateful: true
@@ -32,7 +32,7 @@ controller_server:
     FollowPath:
       plugin: dwb_core::DWBLocalPlanner
       debug_trajectory_details: true
-      min_vel_x: 0.0
+      min_vel_x: -0.20
       max_vel_x: 0.25
       min_vel_y: 0.0
       max_vel_y: 0.0

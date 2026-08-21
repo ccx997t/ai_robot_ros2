@@ -56,6 +56,7 @@ def generate_launch_description():
             'use_sim_time': sim_time_text,
             'controllers_file': str(sim_share / 'config' / 'controllers_m4.yaml'),
             'world_file': world_file,
+            'scan_output_topic': LaunchConfiguration('scan_output_topic'),
         }.items(),
         condition=sim_condition,
     )
@@ -102,6 +103,7 @@ def generate_launch_description():
         DeclareLaunchArgument(
             'world_file', default_value=str(sim_share / 'worlds' / 'm2_test.sdf'),
         ),
+        DeclareLaunchArgument('scan_output_topic', default_value='/scan'),
         *safety_layer,
         simulation,
         wheel_odom_relay,

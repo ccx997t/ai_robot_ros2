@@ -17,6 +17,7 @@
   <exec_depend>nav2_navfn_planner</exec_depend>
   <exec_depend>nav2_planner</exec_depend>
   <test_depend>ament_index_python</test_depend>
+  <test_depend>action_msgs</test_depend>
   <test_depend>ament_cmake_pytest</test_depend>
   <test_depend>controller_manager_msgs</test_depend>
   <test_depend>diagnostic_msgs</test_depend>
