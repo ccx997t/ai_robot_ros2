@@ -21,6 +21,11 @@ def test_model_has_required_links_and_joints():
             'camera_optical_link', 'imu_link'} <= links
     assert joints['left_wheel_joint'].attrib['type'] == 'continuous'
     assert joints['right_wheel_joint'].attrib['type'] == 'continuous'
+    footprint_joint = joints['base_footprint_joint']
+    assert footprint_joint.attrib['type'] == 'fixed'
+    assert footprint_joint.find('parent').attrib['link'] == 'base_link'
+    assert footprint_joint.find('child').attrib['link'] == 'base_footprint'
+    assert float(footprint_joint.find('origin').attrib['xyz'].split()[2]) < 0.0
     assert joints['sensor_joint'].find('parent').attrib['link'] == 'base_link'
 
 
