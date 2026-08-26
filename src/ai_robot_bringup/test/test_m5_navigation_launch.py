@@ -180,8 +180,8 @@ class TestM5NavigationBaseline(unittest.TestCase):
         local_grid = self.local_costmaps[-1]
         self.assertEqual('map', global_grid.header.frame_id)
         self.assertEqual('odom', local_grid.header.frame_id)
-        self.assertEqual(235, global_grid.info.width)
-        self.assertEqual(197, global_grid.info.height)
+        self.assertEqual(244, global_grid.info.width)
+        self.assertEqual(204, global_grid.info.height)
         self.assertAlmostEqual(0.05, global_grid.info.resolution, places=6)
         self.assertAlmostEqual(0.05, local_grid.info.resolution, places=6)
         self.assertEqual(80, local_grid.info.width)

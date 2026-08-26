@@ -70,7 +70,7 @@ def generate_launch_description():
             default_value=str(sim_share / 'worlds' / 'm5_navigation.sdf')),
         DeclareLaunchArgument(
             'map_file',
-            default_value=str(share / 'maps' / 'm5_baseline.yaml')),
+            default_value=str(share / 'maps' / 'm5_complete.yaml')),
         DeclareLaunchArgument(
             'amcl_params_file',
             default_value=str(share / 'config' / 'amcl_m5.yaml')),
