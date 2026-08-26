@@ -1,0 +1,16 @@
+artifact: m5_complete
+kind: simulation_ground_truth
+source: ai_robot_sim/config/m5_scenario.yaml
+format: nav2_trinary_pgm
+width: 244
+height: 204
+resolution: 0.05
+origin:
+- -6.1
+- -5.1
+- 0.0
+occupied_cells: 5172
+free_cells: 44604
+unknown_cells: 0
+yaml_sha256: b5704161cf09ad279d66e80756034160396f11c1cfe0bdd8ab9dacaee66e85b1
+pgm_sha256: c510e6b75ca3a763632d6984a1afa06dbc80e4fc315d4c953b2bc4a391ea199e

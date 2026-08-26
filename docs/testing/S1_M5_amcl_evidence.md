@@ -9,7 +9,7 @@
 - 输出：`/amcl_pose`和`map -> odom`
 - TF所有权：定位入口不启动`slam_toolbox`；AMCL独占`map -> odom`，EKF继续独占`odom -> base_link`。
 
-AMCL采用差速运动模型和likelihood-field雷达模型，粒子数范围冻结为500至2000。地图服务器与AMCL均由`lifecycle_manager_localization`按顺序配置、激活。
+AMCL采用差速运动模型和likelihood-field雷达模型。局部基线初始采用500至2000个粒子；完整地图全局恢复复验后提高并冻结为1000至8000个粒子、每次更新180束雷达。地图服务器与AMCL均由`lifecycle_manager_localization`按顺序配置、激活。
 
 ## 动态测试
 
