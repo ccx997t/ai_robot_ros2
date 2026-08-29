@@ -1,0 +1,72 @@
+schema: ai_robot_rosbag_evidence/v1
+milestone: S1-M5
+recorded_at: '2026-08-28T19:30:12-07:00'
+git_revision: 9223b05
+raw_data_policy: evidence/rosbags is retained locally and ignored by Git
+samples:
+  - scenario: normal
+    verdict: PASS
+    directory: evidence/rosbags/S1-M5_20260828-193012_sim_normal_9223b05
+    test: test_test_m5_navigation_scenarios_launch.py
+    covers:
+      - repeated_navigation
+      - static_obstacle
+      - temporary_obstacle
+      - unreachable_goal
+    duration_ns: 14587904914
+    message_count: 11766
+    topics:
+      /amcl_pose: 17
+      /base_controller/cmd_vel_unstamped: 238
+      /clock: 10138
+      /cmd_vel: 115
+      /diagnostics: 239
+      /global_costmap/costmap: 7
+      /map: 1
+      /odom: 303
+      /scan: 102
+      /tf: 605
+      /tf_static: 1
+    files:
+      S1-M5_20260828-193012_sim_normal_9223b05_0.db3:
+        bytes: 1892352
+        sha256: 276033eb13d11c62a389d33d7cd9c3ade7bde5dc7850079e332fe48a37a3f13b
+      metadata.yaml:
+        bytes: 5860
+        sha256: 2e6fb54570655f1d9ca0e60e934ee2cc2f0a79467aa829cff7653bef039b564f
+    replay:
+      topic: /odom
+      result: one message deserialized; header.frame_id=odom
+  - scenario: cancel_fault
+    verdict: PASS
+    directory: evidence/rosbags/S1-M5_20260828-193012_sim_cancel_fault_9223b05
+    test: test_test_m5_navigation_fault_recovery_launch.py
+    covers:
+      - navigation_cancel
+      - scan_timeout
+      - diagnostic_propagation
+      - navigation_recovery
+    duration_ns: 13490914570
+    message_count: 9927
+    topics:
+      /amcl_pose: 11
+      /base_controller/cmd_vel_unstamped: 232
+      /clock: 8598
+      /cmd_vel: 67
+      /diagnostics: 195
+      /global_costmap/costmap: 5
+      /map: 1
+      /odom: 256
+      /scan: 67
+      /tf: 494
+      /tf_static: 1
+    files:
+      S1-M5_20260828-193012_sim_cancel_fault_9223b05_0.db3:
+        bytes: 1478656
+        sha256: 3f58318c2d921d41b4f69b90477bb428e6f80fdc528d9042bab91759804ff7c2
+      metadata.yaml:
+        bytes: 6773
+        sha256: 848b787de5af6b5005d5c1c08dec5196a00bbf61ecce90fb2e478083d887465a
+    replay:
+      topic: /diagnostics
+      result: one message deserialized; first status name=base/cmd_vel_safety

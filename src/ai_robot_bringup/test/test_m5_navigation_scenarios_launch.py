@@ -21,8 +21,9 @@ from rclpy.qos import DurabilityPolicy, QoSProfile, ReliabilityPolicy
 import yaml
 
 
-os.environ['ROS_DOMAIN_ID'] = str(160 + os.getpid() % 10)
-os.environ['IGN_PARTITION'] = f'ai_robot_m5_scenarios_{os.getpid()}'
+os.environ.setdefault('ROS_DOMAIN_ID', str(160 + os.getpid() % 10))
+os.environ.setdefault(
+    'IGN_PARTITION', f'ai_robot_m5_scenarios_{os.getpid()}')
 
 
 @pytest.mark.launch_test

@@ -20,8 +20,9 @@ from sensor_msgs.msg import LaserScan
 from std_srvs.srv import SetBool
 
 
-os.environ['ROS_DOMAIN_ID'] = str(170 + os.getpid() % 10)
-os.environ['IGN_PARTITION'] = f'ai_robot_m5_fault_recovery_{os.getpid()}'
+os.environ.setdefault('ROS_DOMAIN_ID', str(170 + os.getpid() % 10))
+os.environ.setdefault(
+    'IGN_PARTITION', f'ai_robot_m5_fault_recovery_{os.getpid()}')
 
 
 @pytest.mark.launch_test
