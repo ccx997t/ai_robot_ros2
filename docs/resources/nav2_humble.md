@@ -6,7 +6,7 @@
 - 版本：ROS包版本1.1.20；Debian包`ros-humble-navigation2`为`1.1.20-1jammy.20260804.223401`，`ros-humble-nav2-bringup`为`1.1.20-1jammy.20260804.225407`。
 - 兼容性：Ubuntu 22.04、ROS 2 Humble；本机核心包、可执行程序及系统依赖检查通过。
 - 安装：`sudo apt install ros-humble-navigation2 ros-humble-nav2-bringup`。
-- 资源需求：CPU运行，无专用设备需求；完整导航进程树CPU、RSS、频率和延迟将在M5场景中实测并冻结。
+- 资源需求：CPU运行，无专用设备需求；完整M5导航进程树阈值已冻结为CPU P95不超过800%、RSS P95不超过1800 MiB，详见`docs/testing/S1_M5_resource_baseline.md`。
 
 ## 接口与边界
 
@@ -45,4 +45,4 @@ rosdep check --from-paths src --ignore-src
 - apt升级后必须重跑地图重载、定位、固定路线、障碍、取消、超时、不可达和M4安全回归。
 - 卸载命令：`sudo apt remove ros-humble-navigation2 ros-humble-nav2-bringup`；功能集成失败时回退到S1-M4关闭提交`9d23bb4`。
 
-- 准入结论：**依赖准入通过**；版本、许可证、核心组件发现和`rosdep`已验证。Nav2与AMCL功能指标仍待M5自动场景验收。
+- 准入结论：**依赖及M5功能基线通过**；版本、许可证、核心组件发现、`rosdep`、完整地图定位导航及资源阈值已验证。M5最终关闭仍取决于rosbag证据和全量回归。

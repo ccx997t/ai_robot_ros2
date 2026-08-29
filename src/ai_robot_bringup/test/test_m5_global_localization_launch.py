@@ -1,4 +1,4 @@
-from math import cos, hypot, sin
+from math import atan2, cos, hypot, pi, sin
 import os
 import time
 import unittest
@@ -15,7 +15,10 @@ from nav_msgs.msg import Odometry
 import pytest
 import rclpy
 from rclpy.action import ActionClient
+from rclpy.duration import Duration
+from rclpy.time import Time
 from std_srvs.srv import Empty
+from tf2_ros import Buffer, TransformListener
 import yaml
 
 
@@ -61,6 +64,8 @@ class TestM5GlobalLocalization(unittest.TestCase):
             Empty, '/reinitialize_global_localization')
         cls.navigator = ActionClient(
             cls.node, NavigateToPose, '/navigate_to_pose')
+        cls.tf_buffer = Buffer(cache_time=Duration(seconds=30.0))
+        cls.tf_listener = TransformListener(cls.tf_buffer, cls.node)
         scenario_path = os.path.join(
             get_package_share_directory('ai_robot_sim'),
             'config', 'm5_scenario.yaml')
@@ -134,6 +139,16 @@ class TestM5GlobalLocalization(unittest.TestCase):
             raise AssertionError(f'long-route goal timed out: {target}')
         return result.result().status
 
+    @staticmethod
+    def yaw_error(orientation, target_yaw):
+        actual = atan2(
+            2.0 * (orientation.w * orientation.z
+                   + orientation.x * orientation.y),
+            1.0 - 2.0 * (orientation.y * orientation.y
+                         + orientation.z * orientation.z))
+        difference = actual - float(target_yaw)
+        return abs((difference + pi) % (2.0 * pi) - pi)
+
     def test_global_recovery_and_long_route_drift(self):
         self.assertTrue(self.global_localization.wait_for_service(60.0))
         self.assertTrue(self.navigator.wait_for_server(90.0))
@@ -177,6 +192,8 @@ class TestM5GlobalLocalization(unittest.TestCase):
         odom_start = len(self.odometry)
         results = []
         residuals = []
+        yaw_residuals = []
+        segment_seconds = []
         started = time.monotonic()
         route = [
             self.goals['east_room'],
@@ -184,14 +201,27 @@ class TestM5GlobalLocalization(unittest.TestCase):
             self.goals['west_bay'],
         ]
         for target in route:
+            segment_started = time.monotonic()
             results.append(self.navigate(target))
-            pose = self.poses[-1].pose.pose
+            segment_seconds.append(time.monotonic() - segment_started)
+            self.assertTrue(self.spin_until(
+                lambda: self.tf_buffer.can_transform(
+                    'map', 'base_link', Time()), 3.0))
+            transform = self.tf_buffer.lookup_transform(
+                'map', 'base_link', Time())
+            translation = transform.transform.translation
+            rotation = transform.transform.rotation
             residuals.append(hypot(
-                pose.position.x - float(target['x']),
-                pose.position.y - float(target['y'])))
+                translation.x - float(target['x']),
+                translation.y - float(target['y'])))
+            yaw_residuals.append(self.yaw_error(
+                rotation, target['yaw']))
         route_seconds = time.monotonic() - started
         self.assertEqual([GoalStatus.STATUS_SUCCEEDED] * 3, results)
         self.assertLess(max(residuals), 0.55)
+        self.assertLess(max(yaw_residuals), 0.50)
+        self.assertLess(max(segment_seconds), 100.0)
+        self.assertLess(route_seconds, 240.0)
 
         samples = self.odometry[odom_start:]
         route_length = sum(hypot(
@@ -205,6 +235,8 @@ class TestM5GlobalLocalization(unittest.TestCase):
             for command in self.safe_commands), 0.2501)
         self.node.get_logger().info(
             'M5 metrics: recovery=%.3fs attempts=%d recovery_error=%.3fm '
-            'route=%.3fs length=%.3fm max_arrival_residual=%.3fm' % (
+            'route=%.3fs segments=%s length=%.3fm '
+            'max_arrival_residual=%.3fm max_yaw_residual=%.3frad' % (
                 recovery_seconds, attempts, recovery_error, route_seconds,
-                route_length, max(residuals)))
+                ','.join(f'{value:.3f}' for value in segment_seconds),
+                route_length, max(residuals), max(yaw_residuals)))

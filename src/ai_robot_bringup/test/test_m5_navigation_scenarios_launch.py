@@ -230,11 +230,17 @@ class TestM5NavigationScenarios(unittest.TestCase):
         status, path = self.plan(self.scenario['temporary_detour_goal'])
         self.assertEqual(GoalStatus.STATUS_SUCCEEDED, status)
         self.assertTrue(path.poses)
+        # With a stationary robot the lidar observes the near face, not the
+        # occluded volume behind it. Freeze clearance against that observed
+        # surface point, which is the obstacle source used by the costmap.
         minimum_clearance = min(
-            hypot(pose.pose.position.x - blocker['x'],
+            hypot(pose.pose.position.x - blocker_face_x,
                   pose.pose.position.y - blocker['y'])
             for pose in path.poses)
         self.assertGreaterEqual(minimum_clearance, 0.35)
+        self.node.get_logger().info(
+            'M5 obstacle metric: minimum path-to-observed-surface '
+            f'clearance={minimum_clearance:.3f}m threshold=0.350m')
 
         # The named enclosed pocket lies outside the current known free-space
         # component. With allow_unknown=false it must be rejected explicitly.
