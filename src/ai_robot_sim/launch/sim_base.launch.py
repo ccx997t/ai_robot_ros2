@@ -42,7 +42,10 @@ def generate_launch_description():
     )
     spawn_robot = Node(
         package='ros_gz_sim', executable='create',
-        arguments=['-name', 'ai_robot', '-topic', 'robot_description', '-z', '0.02'],
+        # base_link is centered on the wheel axle. Spawn one wheel radius
+        # above the floor so the chassis and caster do not penetrate it and
+        # rob the drive wheels of traction.
+        arguments=['-name', 'ai_robot', '-topic', 'robot_description', '-z', '0.075'],
         output='screen',
     )
     joint_state_spawner = Node(

@@ -9,5 +9,8 @@ cd "$root"
 set +u
 source install/setup.bash
 set -u
-colcon test --event-handlers console_direct+
+# Gazebo launch tests are resource-intensive and several packages own a
+# simulator instance.  Run packages sequentially so their ROS graphs and
+# simulator processes cannot contend during a full-workspace regression.
+colcon test --executor sequential --event-handlers console_direct+
 colcon test-result --verbose
