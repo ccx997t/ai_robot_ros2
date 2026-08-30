@@ -21,6 +21,14 @@
 
 传感器Topic采用BestEffort以匹配实时数据流；控制、状态和诊断采用Reliable。具体驱动若无法满足，应通过适配层统一并记录偏差，不能静默改变上层契约。
 
+## Action契约
+
+| Action | 类型 | 所有者 | 成功/失败语义 | 实现阶段 |
+|---|---|---|---|---|
+| `/execute_robot_task` | `ai_robot_interfaces/action/ExecuteRobotTask` | M6任务管理器 | 统一表达校验、导航、到点感知、取消、超时、安全停止及稳定错误码 | S1-M6 |
+
+该Action的Goal、Feedback、Result、数字错误码和取消顺序详见`docs/architecture/task_action_contract.md`。Nav2 `NavigateToPose`仍是任务管理器内部的导航子Action，不是M6综合任务的替代品。
+
 ## 参数基线
 
 | 参数 | 类型 | 默认值 | 合法范围/枚举 | 失败行为 |
