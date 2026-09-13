@@ -1,0 +1,40 @@
+# Goal. target_pose must use the map frame and a finite, normalized pose.
+uint8 PERCEPTION_NONE=0
+uint8 PERCEPTION_IMAGE_CHECK=1
+
+string task_id
+geometry_msgs/PoseStamped target_pose
+uint8 perception_mode
+builtin_interfaces/Duration navigation_timeout
+builtin_interfaces/Duration perception_timeout
+---
+# Result. Numeric values are a stable public contract; do not renumber them.
+uint16 ERROR_NONE=0
+uint16 ERROR_INVALID_GOAL=100
+uint16 ERROR_OUT_OF_BOUNDS=101
+uint16 ERROR_BUSY=102
+uint16 ERROR_NAVIGATION_REJECTED=200
+uint16 ERROR_NAVIGATION_UNREACHABLE=201
+uint16 ERROR_NAVIGATION_TIMEOUT=202
+uint16 ERROR_CANCELED=300
+uint16 ERROR_PERCEPTION_UNAVAILABLE=400
+uint16 ERROR_PERCEPTION_TIMEOUT=401
+uint16 ERROR_PERCEPTION_INVALID=402
+uint16 ERROR_SAFETY_STOPPED=500
+uint16 ERROR_INTERNAL=900
+
+bool success
+uint16 error_code
+string message
+builtin_interfaces/Duration elapsed
+string perception_result
+---
+# Feedback phase values are monotonic during normal execution.
+uint8 PHASE_VALIDATING=0
+uint8 PHASE_NAVIGATING=1
+uint8 PHASE_PERCEIVING=2
+uint8 PHASE_FINALIZING=3
+
+uint8 phase
+float32 progress
+string detail
