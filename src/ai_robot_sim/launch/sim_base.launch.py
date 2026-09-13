@@ -15,16 +15,20 @@ def generate_launch_description():
     description_share = Path(get_package_share_directory('ai_robot_description'))
     ros_gz_share = Path(get_package_share_directory('ros_gz_sim'))
     controllers = LaunchConfiguration('controllers_file')
-    model = description_share / 'urdf' / 'ai_robot.urdf.xacro'
+    model = LaunchConfiguration('robot_model_file')
     world = LaunchConfiguration('world_file')
     use_sim_time = LaunchConfiguration('use_sim_time')
     enable_lidar = LaunchConfiguration('enable_lidar')
     enable_camera = LaunchConfiguration('enable_camera')
     enable_imu = LaunchConfiguration('enable_imu')
+    robot_name = LaunchConfiguration('robot_name')
+    spawn_x = LaunchConfiguration('spawn_x')
+    spawn_y = LaunchConfiguration('spawn_y')
+    spawn_z = LaunchConfiguration('spawn_z')
 
     robot_description = ParameterValue(
         Command([
-            'xacro ', str(model), ' controllers_file:=', controllers,
+            'xacro ', model, ' controllers_file:=', controllers,
             ' enable_lidar:=', enable_lidar,
             ' enable_camera:=', enable_camera,
             ' enable_imu:=', enable_imu,
@@ -45,7 +49,10 @@ def generate_launch_description():
         # base_link is centered on the wheel axle. Spawn one wheel radius
         # above the floor so the chassis and caster do not penetrate it and
         # rob the drive wheels of traction.
-        arguments=['-name', 'ai_robot', '-topic', 'robot_description', '-z', '0.075'],
+        arguments=[
+            '-name', robot_name, '-topic', 'robot_description',
+            '-x', spawn_x, '-y', spawn_y, '-z', spawn_z,
+        ],
         output='screen',
     )
     joint_state_spawner = Node(
@@ -69,10 +76,18 @@ def generate_launch_description():
             default_value=str(sim_share / 'config' / 'controllers.yaml'),
         ),
         DeclareLaunchArgument(
+            'robot_model_file',
+            default_value=str(description_share / 'urdf' / 'ai_robot.urdf.xacro'),
+        ),
+        DeclareLaunchArgument(
             'world_file', default_value=str(sim_share / 'worlds' / 'm2_test.sdf'),
         ),
         DeclareLaunchArgument('enable_lidar', default_value='false', choices=['true', 'false']),
         DeclareLaunchArgument('enable_camera', default_value='false', choices=['true', 'false']),
         DeclareLaunchArgument('enable_imu', default_value='false', choices=['true', 'false']),
+        DeclareLaunchArgument('robot_name', default_value='ai_robot'),
+        DeclareLaunchArgument('spawn_x', default_value='0.0'),
+        DeclareLaunchArgument('spawn_y', default_value='0.0'),
+        DeclareLaunchArgument('spawn_z', default_value='0.075'),
         gazebo, state_publisher, spawn_robot, load_controllers,
     ])

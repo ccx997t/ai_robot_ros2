@@ -127,6 +127,56 @@ def test_m5_local_navigation_acceptance_contract():
             'model.sdf').is_file()
 
 
+def test_simple_maze_world_matches_symmetric_partition_contract():
+    contract = yaml.safe_load(
+        (PACKAGE_DIR / 'config' / 'simple_maze.yaml').read_text())['scenario']
+    root = ET.parse(PACKAGE_DIR / 'worlds' / contract['world_file']).getroot()
+    world = root.find('world')
+    assert world.attrib['name'] == contract['name'] == 'simple_maze'
+    assert contract['dimensions'] == {'width_x': 10.0, 'length_y': 12.0}
+    assert contract['boundary']['x_min'] == -5.0
+    assert contract['boundary']['x_max'] == 5.0
+    assert contract['boundary']['y_min'] == -6.0
+    assert contract['boundary']['y_max'] == 6.0
+
+    aisle = contract['central_aisle']
+    assert aisle == {'x_min': -1.5, 'x_max': 1.5, 'width': 3.0}
+    expected_size = contract['partitions']['size']
+    assert expected_size == [3.5, 0.3, 1.0]
+    assert contract['partitions']['y_positions'] == [-3.6, -1.2, 1.2, 3.6]
+
+    left = contract['partitions']['left']
+    right = contract['partitions']['right']
+    assert len(left) == len(right) == 4
+    partition_models = [
+        model for model in world.findall('model')
+        if model.attrib['name'].startswith('partition_')]
+    assert len(partition_models) == 8
+
+    for index in range(1, 5):
+        left_name = f'partition_l{index}'
+        right_name = f'partition_r{index}'
+        left_model = world.find(f"model[@name='{left_name}']")
+        right_model = world.find(f"model[@name='{right_name}']")
+        left_pose, left_size = _box_contract(left_model)
+        right_pose, right_size = _box_contract(right_model)
+        assert left_size == right_size == expected_size
+        assert left_pose[:3] == left[left_name]['pose'][:3]
+        assert right_pose[:3] == right[right_name]['pose'][:3]
+        assert math.isclose(left_pose[0], -right_pose[0])
+        assert math.isclose(left_pose[1], right_pose[1])
+        assert math.isclose(left_pose[0] + expected_size[0] / 2.0,
+                            aisle['x_min'])
+        assert math.isclose(right_pose[0] - expected_size[0] / 2.0,
+                            aisle['x_max'])
+
+    spawn = contract['robot']['spawn']
+    goal = contract['goals']['central_north']
+    assert aisle['x_min'] < spawn['x'] < aisle['x_max']
+    assert aisle['x_min'] < goal['x'] < aisle['x_max']
+    assert spawn['y'] == -5.0 and goal['y'] == 5.0
+
+
 def test_diff_drive_controller_contract():
     config = yaml.safe_load((PACKAGE_DIR / 'config' / 'controllers.yaml').read_text())
     params = config['base_controller']['ros__parameters']

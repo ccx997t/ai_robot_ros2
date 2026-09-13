@@ -1,0 +1,371 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+文件名：小黄车_v1.2.urdf.xacro
+版本：1.1；日期：2026-09-07
+规格依据：小黄车模型规格说明_v1.2.md。
+源码基础：D:/usr/AI机器人/src/ai_robot_description/urdf/ai_robot.urdf.xacro。
+外观参考：项目内小黄车正面、侧面、正面补充相机三张照片。
+用途：ROS 2 Humble + Gazebo Fortress 的简化四轮移动小车候选模型。
+不修改原文件；自包含几何，无需mesh或纹理。
+估计值：设备箱、雷达外形、防撞杆、质量及双目基线0.06、光心高度0.273。
+轮距由0.36改为0.42，避免轮胎与车壳相交；驱动插件同步使用该轮距。
+包含双路相机传感器，未包含双目匹配、深度算法或时间同步节点。
+源相机话题由左目保留，camera_link改为双目中点，消息使用各自optical_frame。
+左右轮、IMU、雷达接口沿用；雷达位置更新以适配设备箱。
+单位：米、千克、弧度。X向前，Y向左，Z向上。
+base_footprint与base_link同位于理想接地平面，轮胎底面Z=0。
+含防撞杆及轮毂尺寸约0.596×0.457，不能以车壳尺寸代替完整导航footprint。
+已适配Gazebo Fortress原生传感器与gz_ros2_control；动力学、话题桥接及双目同步仍需场景验证。
+静态审核：xacro 2.1.1实际展开通过；28链接/27关节，四轮参数与驱动一致；
+双目外参与光学轴、正质量及对角惯量、视觉碰撞一致性检查通过。
+总假设质量17.22千克，实体包围尺寸0.596×0.457×0.380米；未运行Gazebo。
+-->
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="yellow_robot_v1_2">
+  <xacro:arg name="controllers_file" default=""/>
+  <xacro:arg name="enable_lidar" default="false"/>
+  <xacro:arg name="enable_camera" default="false"/>
+  <xacro:arg name="enable_imu" default="false"/>
+
+  <!-- 一、集中参数：保留源码基本车身尺寸，所有衍生位置用表达式计算。 -->
+  <xacro:property name="body_length" value="0.52"/>
+  <xacro:property name="body_width" value="0.36"/>
+  <xacro:property name="body_height" value="0.16"/>
+  <xacro:property name="body_mass" value="12.0"/>
+  <xacro:property name="wheel_radius" value="0.075"/>
+  <xacro:property name="wheel_width" value="0.035"/>
+  <xacro:property name="wheel_mass" value="0.8"/>
+  <xacro:property name="wheel_x" value="0.16"/>
+  <xacro:property name="wheel_y" value="0.21"/>
+  <xacro:property name="body_top" value="${wheel_radius + body_height}"/>
+  <xacro:property name="stereo_baseline" value="0.06"/>
+  <xacro:property name="camera_x" value="0.24"/>
+  <!-- 光心Z=0.273；外壳半高0.012，使外壳顶部Z=0.285，与设备机箱中部齐平。 -->
+  <xacro:property name="camera_z" value="0.273"/>
+  <xacro:property name="camera_width" value="640"/>
+  <xacro:property name="camera_height" value="480"/>
+  <xacro:property name="camera_hfov" value="1.047"/>
+  <xacro:property name="laser_samples" value="360"/>
+  <xacro:property name="laser_min_angle" value="${-pi}"/>
+  <xacro:property name="laser_max_angle" value="${pi}"/>
+  <xacro:property name="laser_min_range" value="0.12"/>
+  <xacro:property name="laser_max_range" value="8.0"/>
+  <xacro:property name="laser_x" value="-0.025"/>
+  <xacro:property name="laser_z" value="0.385"/>
+
+  <!-- URDF材质供RViz使用；各实体另设Gazebo材质。 -->
+  <material name="yellow"><color rgba="0.95 0.65 0.05 1"/></material>
+  <material name="black"><color rgba="0.05 0.05 0.055 1"/></material>
+  <material name="orange"><color rgba="0.9 0.22 0.04 1"/></material>
+  <material name="blue"><color rgba="0.05 0.18 0.35 1"/></material>
+
+  <!-- 二、几何宏：视觉/碰撞同形。惯量以各实体自身中心计算。 -->
+  <xacro:macro name="box_inertia" params="m sx sy sz xyz:='0 0 0'">
+    <inertial>
+      <origin xyz="${xyz}" rpy="0 0 0"/>
+      <mass value="${m}"/>
+      <inertia ixx="${m*(sy*sy+sz*sz)/12}" ixy="0" ixz="0"
+               iyy="${m*(sx*sx+sz*sz)/12}" iyz="0" izz="${m*(sx*sx+sy*sy)/12}"/>
+    </inertial>
+  </xacro:macro>
+
+  <xacro:macro name="fixed_box" params="name parent xyz sx sy sz m color gz">
+    <link name="${name}">
+      <xacro:box_inertia m="${m}" sx="${sx}" sy="${sy}" sz="${sz}"/>
+      <visual name="${name}_visual">
+        <geometry><box size="${sx} ${sy} ${sz}"/></geometry>
+        <material name="${color}"/>
+      </visual>
+      <collision name="${name}_collision">
+        <geometry><box size="${sx} ${sy} ${sz}"/></geometry>
+      </collision>
+    </link>
+    <joint name="${name}_joint" type="fixed">
+      <parent link="${parent}"/><child link="${name}"/>
+      <origin xyz="${xyz}" rpy="0 0 0"/>
+    </joint>
+    <gazebo reference="${name}"><material>${gz}</material></gazebo>
+  </xacro:macro>
+
+  <!-- 圆柱局部轴为Z；方向通过固定关节rpy指定。 -->
+  <xacro:macro name="fixed_cylinder" params="name parent xyz rpy radius length m color gz">
+    <link name="${name}">
+      <inertial>
+        <mass value="${m}"/>
+        <inertia ixx="${m*(3*radius*radius+length*length)/12}" ixy="0" ixz="0"
+                 iyy="${m*(3*radius*radius+length*length)/12}" iyz="0"
+                 izz="${m*radius*radius/2}"/>
+      </inertial>
+      <visual name="${name}_visual">
+        <geometry><cylinder radius="${radius}" length="${length}"/></geometry>
+        <material name="${color}"/>
+      </visual>
+      <collision name="${name}_collision">
+        <geometry><cylinder radius="${radius}" length="${length}"/></geometry>
+      </collision>
+    </link>
+    <joint name="${name}_joint" type="fixed">
+      <parent link="${parent}"/><child link="${name}"/>
+      <origin xyz="${xyz}" rpy="${rpy}"/>
+    </joint>
+    <gazebo reference="${name}"><material>${gz}</material></gazebo>
+  </xacro:macro>
+
+  <!-- 三、根坐标与黄色车身；车身惯性中心修正至几何中心。 -->
+  <link name="base_footprint"/>
+  <joint name="base_footprint_joint" type="fixed">
+    <parent link="base_footprint"/><child link="base_link"/>
+    <origin xyz="0 0 0" rpy="0 0 0"/>
+  </joint>
+  <link name="base_link">
+    <xacro:box_inertia m="${body_mass}" sx="${body_length}" sy="${body_width}"
+                      sz="${body_height}" xyz="0 0 ${wheel_radius + body_height/2}"/>
+    <visual name="body_visual">
+      <origin xyz="0 0 ${wheel_radius + body_height/2}"/>
+      <geometry><box size="${body_length} ${body_width} ${body_height}"/></geometry>
+      <material name="yellow"/>
+    </visual>
+    <collision name="body_collision">
+      <origin xyz="0 0 ${wheel_radius + body_height/2}"/>
+      <geometry><box size="${body_length} ${body_width} ${body_height}"/></geometry>
+    </collision>
+  </link>
+  <gazebo reference="base_link"><material>Gazebo/Yellow</material></gazebo>
+
+  <!-- 四、四个轮胎：轴沿Y，轮胎圆柱惯量也按Y轴设置。轮毂比轮胎外侧突出1毫米，避免共面闪烁。 -->
+  <xacro:macro name="wheel" params="name x y side">
+    <link name="${name}">
+      <inertial>
+        <mass value="${wheel_mass}"/>
+        <inertia ixx="${wheel_mass*(3*wheel_radius*wheel_radius+wheel_width*wheel_width)/12}"
+                 ixy="0" ixz="0" iyy="${wheel_mass*wheel_radius*wheel_radius/2}" iyz="0"
+                 izz="${wheel_mass*(3*wheel_radius*wheel_radius+wheel_width*wheel_width)/12}"/>
+      </inertial>
+      <visual name="${name}_visual">
+        <origin xyz="0 0 0" rpy="${pi/2} 0 0"/>
+        <geometry><cylinder radius="${wheel_radius}" length="${wheel_width}"/></geometry>
+        <material name="black"/>
+      </visual>
+      <collision name="${name}_collision">
+        <origin xyz="0 0 0" rpy="${pi/2} 0 0"/>
+        <geometry><cylinder radius="${wheel_radius}" length="${wheel_width}"/></geometry>
+      </collision>
+    </link>
+    <joint name="${name}_joint" type="continuous">
+      <parent link="base_link"/><child link="${name}"/>
+      <origin xyz="${x} ${y} ${wheel_radius}" rpy="0 0 0"/>
+      <axis xyz="0 1 0"/>
+      <dynamics damping="0.01" friction="0"/>
+    </joint>
+    <gazebo reference="${name}">
+      <material>Gazebo/Black</material>
+      <mu1>1.0</mu1><mu2>1.0</mu2>
+    </gazebo>
+    <xacro:fixed_cylinder name="${name}_hub" parent="${name}"
+      xyz="0 ${side*wheel_width/2} 0" rpy="${pi/2} 0 0"
+      radius="0.04" length="0.002" m="0.02" color="orange" gz="Gazebo/Orange"/>
+  </xacro:macro>
+  <xacro:wheel name="left_front_wheel" x="${wheel_x}" y="${wheel_y}" side="1"/>
+  <xacro:wheel name="left_rear_wheel" x="${-wheel_x}" y="${wheel_y}" side="1"/>
+  <xacro:wheel name="right_front_wheel" x="${wheel_x}" y="${-wheel_y}" side="-1"/>
+  <xacro:wheel name="right_rear_wheel" x="${-wheel_x}" y="${-wheel_y}" side="-1"/>
+
+  <!-- 五、平台、设备箱、雷达壳体；扫描平面高于所有上部实体。 -->
+  <xacro:fixed_box name="top_deck" parent="base_link" xyz="0 0 ${body_top+0.005}"
+    sx="0.38" sy="0.28" sz="0.01" m="0.4" color="black" gz="Gazebo/Black"/>
+  <xacro:fixed_box name="equipment_box" parent="base_link" xyz="-0.025 0 ${body_top+0.05}"
+    sx="0.18" sy="0.16" sz="0.08" m="1.0" color="black" gz="Gazebo/Black"/>
+  <xacro:fixed_cylinder name="lidar_housing" parent="base_link"
+    xyz="${laser_x} 0 ${body_top+0.1175}" rpy="0 0 0"
+    radius="0.055" length="0.055" m="0.2" color="black" gz="Gazebo/Black"/>
+  <link name="laser_link"/>
+  <joint name="laser_joint" type="fixed">
+    <parent link="base_link"/><child link="laser_link"/>
+    <origin xyz="${laser_x} 0 ${laser_z}" rpy="0 0 0"/>
+  </joint>
+
+  <!-- 六、前后防撞杆与支架。保留实体碰撞，纳入整车外形。 -->
+  <xacro:macro name="bumper" params="name side">
+    <xacro:fixed_cylinder name="${name}_bar" parent="base_link"
+      xyz="${side*0.29} 0 0.10" rpy="${pi/2} 0 0"
+      radius="0.008" length="0.32" m="0.08" color="black" gz="Gazebo/Black"/>
+    <xacro:fixed_box name="${name}_left_bracket" parent="base_link"
+      xyz="${side*0.2725} 0.13 0.10" sx="0.035" sy="0.012" sz="0.012"
+      m="0.02" color="black" gz="Gazebo/Black"/>
+    <xacro:fixed_box name="${name}_right_bracket" parent="base_link"
+      xyz="${side*0.2725} -0.13 0.10" sx="0.035" sy="0.012" sz="0.012"
+      m="0.02" color="black" gz="Gazebo/Black"/>
+  </xacro:macro>
+  <xacro:bumper name="front_bumper" side="1"/>
+  <xacro:bumper name="rear_bumper" side="-1"/>
+
+  <!-- 七、前置双目：camera_link为光心中点；光学坐标通过旋转得到。 -->
+  <link name="camera_link"/>
+  <joint name="camera_joint" type="fixed">
+    <parent link="base_link"/><child link="camera_link"/>
+    <origin xyz="${camera_x} 0 ${camera_z}" rpy="0 0 0"/>
+  </joint>
+  <xacro:fixed_box name="stereo_housing" parent="camera_link" xyz="-0.022 0 0"
+    sx="0.026" sy="0.10" sz="0.024" m="0.08" color="black" gz="Gazebo/Black"/>
+  <xacro:fixed_box name="stereo_mount" parent="base_link"
+    xyz="${camera_x-0.022} 0 ${(body_top+camera_z-0.012)/2}"
+    sx="0.024" sy="0.07" sz="${camera_z-0.012-body_top}" m="0.01"
+    color="black" gz="Gazebo/Black"/>
+
+  <xacro:macro name="stereo_eye" params="side y topic calibration_baseline">
+    <link name="camera_${side}_link">
+      <xacro:box_inertia m="0.005" sx="0.01" sy="0.012" sz="0.012" xyz="-0.005 0 0"/>
+      <visual name="${side}_lens_visual">
+        <origin xyz="-0.005 0 0" rpy="0 ${pi/2} 0"/>
+        <geometry><cylinder radius="0.006" length="0.01"/></geometry>
+        <material name="blue"/>
+      </visual>
+      <collision name="${side}_lens_collision">
+        <origin xyz="-0.005 0 0" rpy="0 ${pi/2} 0"/>
+        <geometry><cylinder radius="0.006" length="0.01"/></geometry>
+      </collision>
+    </link>
+    <joint name="camera_${side}_joint" type="fixed">
+      <parent link="camera_link"/><child link="camera_${side}_link"/>
+      <origin xyz="0 ${y} 0" rpy="0 0 0"/>
+    </joint>
+    <link name="camera_${side}_optical_frame"/>
+    <joint name="camera_${side}_optical_joint" type="fixed">
+      <parent link="camera_${side}_link"/><child link="camera_${side}_optical_frame"/>
+      <origin xyz="0 0 0" rpy="${-pi/2} 0 ${-pi/2}"/>
+    </joint>
+    <xacro:if value="$(arg enable_camera)">
+    <gazebo reference="camera_${side}_link">
+      <material>Gazebo/Blue</material>
+      <sensor name="ai_robot_camera_${side}" type="camera">
+        <always_on>true</always_on>
+        <visualize>false</visualize>
+        <update_rate>10</update_rate>
+        <camera>
+          <horizontal_fov>${camera_hfov}</horizontal_fov>
+          <image><width>${camera_width}</width><height>${camera_height}</height><format>R8G8B8</format></image>
+          <clip><near>0.05</near><far>8.0</far></clip>
+        </camera>
+        <topic>sim/${topic}/image_raw</topic>
+      </sensor>
+    </gazebo>
+    </xacro:if>
+  </xacro:macro>
+  <xacro:stereo_eye side="left" y="${stereo_baseline/2}" topic="camera" calibration_baseline="0"/>
+  <xacro:stereo_eye side="right" y="${-stereo_baseline/2}" topic="camera/right"
+    calibration_baseline="${stereo_baseline}"/>
+
+  <!-- 八、IMU保留源坐标位置，质量计入车身。 -->
+  <link name="imu_link"/>
+  <joint name="imu_joint" type="fixed">
+    <parent link="base_link"/><child link="imu_link"/>
+    <origin xyz="0 0 ${body_top}" rpy="0 0 0"/>
+  </joint>
+
+  <!-- 九、Gazebo Fortress四轮ros2_control驱动。 -->
+  <ros2_control name="GazeboSimSystem" type="system">
+    <hardware><plugin>gz_ros2_control/GazeboSimSystem</plugin></hardware>
+    <xacro:macro name="controlled_wheel" params="joint">
+      <joint name="${joint}">
+        <command_interface name="velocity">
+          <param name="min">-8.0</param><param name="max">8.0</param>
+        </command_interface>
+        <state_interface name="position"/>
+        <state_interface name="velocity"/>
+      </joint>
+    </xacro:macro>
+    <xacro:controlled_wheel joint="left_front_wheel_joint"/>
+    <xacro:controlled_wheel joint="left_rear_wheel_joint"/>
+    <xacro:controlled_wheel joint="right_front_wheel_joint"/>
+    <xacro:controlled_wheel joint="right_rear_wheel_joint"/>
+  </ros2_control>
+  <gazebo>
+    <plugin filename="libgz_ros2_control-system.so"
+            name="gz_ros2_control::GazeboSimROS2ControlPlugin">
+      <parameters>$(arg controllers_file)</parameters>
+    </plugin>
+  </gazebo>
+
+  <!-- 十、Gazebo Fortress原生雷达与IMU；ROS桥接由ai_robot_sim负责。 -->
+  <xacro:if value="$(arg enable_lidar)">
+  <gazebo reference="laser_link">
+    <sensor name="ai_robot_laser" type="gpu_lidar">
+      <always_on>true</always_on>
+      <visualize>true</visualize>
+      <update_rate>10</update_rate>
+      <topic>sim/scan</topic>
+      <lidar>
+        <scan>
+          <horizontal>
+            <samples>${laser_samples}</samples>
+            <resolution>1</resolution>
+            <min_angle>${laser_min_angle}</min_angle>
+            <max_angle>${laser_max_angle}</max_angle>
+          </horizontal>
+        </scan>
+        <range>
+          <min>${laser_min_range}</min>
+          <max>${laser_max_range}</max>
+          <resolution>0.01</resolution>
+        </range>
+        <noise>
+          <type>gaussian</type>
+          <mean>0.0</mean>
+          <stddev>0.01</stddev>
+        </noise>
+      </lidar>
+    </sensor>
+  </gazebo>
+  </xacro:if>
+
+  <xacro:if value="$(arg enable_imu)">
+  <gazebo reference="imu_link">
+    <sensor name="ai_robot_imu" type="imu">
+      <always_on>true</always_on>
+      <update_rate>50</update_rate>
+      <topic>sim/imu/data</topic>
+      <imu>
+        <angular_velocity>
+          <x>
+            <noise type="gaussian">
+              <mean>0.0</mean>
+              <stddev>0.0002</stddev>
+            </noise>
+          </x>
+          <y>
+            <noise type="gaussian">
+              <mean>0.0</mean>
+              <stddev>0.0002</stddev>
+            </noise>
+          </y>
+          <z>
+            <noise type="gaussian">
+              <mean>0.0</mean>
+              <stddev>0.0002</stddev>
+            </noise>
+          </z>
+        </angular_velocity>
+        <linear_acceleration>
+          <x>
+            <noise type="gaussian">
+              <mean>0.0</mean>
+              <stddev>0.01</stddev>
+            </noise>
+          </x>
+          <y>
+            <noise type="gaussian">
+              <mean>0.0</mean>
+              <stddev>0.01</stddev>
+            </noise>
+          </y>
+          <z>
+            <noise type="gaussian">
+              <mean>0.0</mean>
+              <stddev>0.01</stddev>
+            </noise>
+          </z>
+        </linear_acceleration>
+      </imu>
+    </sensor>
+  </gazebo>
+  </xacro:if>
+</robot>

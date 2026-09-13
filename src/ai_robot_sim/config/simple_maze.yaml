@@ -1,0 +1,33 @@
+scenario:
+  name: simple_maze
+  frame_id: map
+  world_file: simple_maze.sdf
+  dimensions: {width_x: 10.0, length_y: 12.0}
+  boundary:
+    x_min: -5.0
+    x_max: 5.0
+    y_min: -6.0
+    y_max: 6.0
+    wall_thickness: 0.2
+    wall_height: 1.0
+  central_aisle:
+    x_min: -1.5
+    x_max: 1.5
+    width: 3.0
+  robot:
+    spawn: {x: 0.0, y: -5.0, z: 0.075, yaw: 1.57079632679}
+  goals:
+    central_north: {x: 0.0, y: 5.0, yaw: 1.57079632679, reachable: true}
+  partitions:
+    size: [3.5, 0.3, 1.0]
+    y_positions: [-3.6, -1.2, 1.2, 3.6]
+    left:
+      partition_l1: {pose: [-3.25, -3.6, 0.5, 0.0]}
+      partition_l2: {pose: [-3.25, -1.2, 0.5, 0.0]}
+      partition_l3: {pose: [-3.25, 1.2, 0.5, 0.0]}
+      partition_l4: {pose: [-3.25, 3.6, 0.5, 0.0]}
+    right:
+      partition_r1: {pose: [3.25, -3.6, 0.5, 0.0]}
+      partition_r2: {pose: [3.25, -1.2, 0.5, 0.0]}
+      partition_r3: {pose: [3.25, 1.2, 0.5, 0.0]}
+      partition_r4: {pose: [3.25, 3.6, 0.5, 0.0]}

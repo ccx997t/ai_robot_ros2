@@ -5,10 +5,29 @@ import xacro
 
 
 XACRO_FILE = Path(__file__).parents[1] / 'urdf' / 'ai_robot.urdf.xacro'
+YELLOW_ROBOT_XACRO_FILE = (
+    Path(__file__).parents[1] / 'urdf' / 'yellow_robot_v1_2.urdf.xacro'
+)
 
 
 def expanded_robot():
     return ET.fromstring(xacro.process_file(str(XACRO_FILE)).toxml())
+
+
+def test_yellow_robot_candidate_expands_with_fortress_control_contract():
+    root = ET.fromstring(xacro.process_file(
+        str(YELLOW_ROBOT_XACRO_FILE),
+        mappings={'controllers_file': '/tmp/controllers.yaml'},
+    ).toxml())
+    joints = {joint.attrib['name'] for joint in root.findall('.//joint')}
+    assert {
+        'left_front_wheel_joint', 'left_rear_wheel_joint',
+        'right_front_wheel_joint', 'right_rear_wheel_joint',
+    } <= joints
+    plugins = root.findall('.//gazebo/plugin')
+    filenames = {plugin.attrib.get('filename') for plugin in plugins}
+    assert 'libgz_ros2_control-system.so' in filenames
+    assert not any(filename and 'libgazebo_ros_' in filename for filename in filenames)
 
 
 def test_model_has_required_links_and_joints():

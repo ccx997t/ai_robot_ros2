@@ -1,0 +1,8 @@
+reactive_avoidance:
+  ros__parameters:
+    use_sim_time: true
+    forward_speed: 0.10
+    turn_speed: 0.45
+    stop_distance: 0.70
+    clear_distance: 1.00
+    scan_timeout: 0.50

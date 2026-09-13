@@ -1,0 +1,149 @@
+<?xml version="1.0"?>
+<sdf version="1.8">
+  <!--
+    Approximation based on the supplied oblique screenshot, not a measured plan.
+    Coordinate convention: X right, Y toward the back of the house, Z up.
+    House envelope: 8.0 x 7.0 m; wall thickness: 0.20 m; height: 2.50 m.
+    Door openings are 1.0-1.2 m wide so the 0.60 x 0.46 m robot can pass.
+  -->
+  <world name="reference_house">
+    <physics name="1ms" type="ignored">
+      <max_step_size>0.001</max_step_size>
+      <real_time_factor>1.0</real_time_factor>
+    </physics>
+    <plugin filename="ignition-gazebo-physics-system" name="ignition::gazebo::systems::Physics"/>
+    <plugin filename="ignition-gazebo-user-commands-system" name="ignition::gazebo::systems::UserCommands"/>
+    <plugin filename="ignition-gazebo-scene-broadcaster-system" name="ignition::gazebo::systems::SceneBroadcaster"/>
+    <plugin filename="ignition-gazebo-sensors-system" name="ignition::gazebo::systems::Sensors">
+      <render_engine>ogre2</render_engine>
+    </plugin>
+    <gravity>0 0 -9.8</gravity>
+
+    <light type="directional" name="sun">
+      <pose>-3 -4 10 0 0 0</pose>
+      <direction>0.35 0.25 -0.9</direction>
+      <diffuse>0.9 0.9 0.85 1</diffuse>
+      <specular>0.2 0.2 0.2 1</specular>
+    </light>
+
+    <model name="site_ground">
+      <static>true</static>
+      <link name="ground">
+        <collision name="collision">
+          <geometry><plane><normal>0 0 1</normal><size>16 15</size></plane></geometry>
+        </collision>
+        <visual name="visual">
+          <geometry><plane><normal>0 0 1</normal><size>16 15</size></plane></geometry>
+          <material><ambient>0.72 0.63 0.48 1</ambient><diffuse>0.78 0.69 0.53 1</diffuse></material>
+        </visual>
+      </link>
+    </model>
+
+    <model name="house_floor">
+      <static>true</static>
+      <pose>0 0 0.025 0 0 0</pose>
+      <link name="floor">
+        <collision name="collision"><geometry><box><size>8.0 7.0 0.05</size></box></geometry></collision>
+        <visual name="visual">
+          <geometry><box><size>8.0 7.0 0.05</size></box></geometry>
+          <material><ambient>0.66 0.66 0.62 1</ambient><diffuse>0.72 0.72 0.68 1</diffuse></material>
+        </visual>
+      </link>
+    </model>
+
+    <!-- All wall poses are relative to the house center. The south wall has a 1.2 m front door. -->
+    <model name="house_walls">
+      <static>true</static>
+      <link name="south_left">
+        <pose>-3.10 -3.50 1.25 0 0 0</pose>
+        <collision name="collision"><geometry><box><size>1.80 0.20 2.50</size></box></geometry></collision>
+        <visual name="visual"><geometry><box><size>1.80 0.20 2.50</size></box></geometry><material><ambient>0.88 0.88 0.84 1</ambient><diffuse>0.94 0.94 0.90 1</diffuse></material></visual>
+      </link>
+      <link name="south_right">
+        <pose>0.90 -3.50 1.25 0 0 0</pose>
+        <collision name="collision"><geometry><box><size>6.20 0.20 2.50</size></box></geometry></collision>
+        <visual name="visual"><geometry><box><size>6.20 0.20 2.50</size></box></geometry><material><ambient>0.88 0.88 0.84 1</ambient><diffuse>0.94 0.94 0.90 1</diffuse></material></visual>
+      </link>
+      <link name="north">
+        <pose>0 3.50 1.25 0 0 0</pose>
+        <collision name="collision"><geometry><box><size>8.20 0.20 2.50</size></box></geometry></collision>
+        <visual name="visual"><geometry><box><size>8.20 0.20 2.50</size></box></geometry><material><ambient>0.88 0.88 0.84 1</ambient><diffuse>0.94 0.94 0.90 1</diffuse></material></visual>
+      </link>
+      <link name="west">
+        <pose>-4.00 0 1.25 0 0 0</pose>
+        <collision name="collision"><geometry><box><size>0.20 7.20 2.50</size></box></geometry></collision>
+        <visual name="visual"><geometry><box><size>0.20 7.20 2.50</size></box></geometry><material><ambient>0.88 0.88 0.84 1</ambient><diffuse>0.94 0.94 0.90 1</diffuse></material></visual>
+      </link>
+      <link name="east">
+        <pose>4.00 0 1.25 0 0 0</pose>
+        <collision name="collision"><geometry><box><size>0.20 7.20 2.50</size></box></geometry></collision>
+        <visual name="visual"><geometry><box><size>0.20 7.20 2.50</size></box></geometry><material><ambient>0.88 0.88 0.84 1</ambient><diffuse>0.94 0.94 0.90 1</diffuse></material></visual>
+      </link>
+
+      <!-- Left rooms and the central hall. Gaps between segments are doors. -->
+      <link name="hall_left_south">
+        <pose>-1.30 -2.45 1.25 0 0 0</pose>
+        <collision name="collision"><geometry><box><size>0.20 2.10 2.50</size></box></geometry></collision>
+        <visual name="visual"><geometry><box><size>0.20 2.10 2.50</size></box></geometry><material><ambient>0.86 0.86 0.82 1</ambient><diffuse>0.92 0.92 0.88 1</diffuse></material></visual>
+      </link>
+      <link name="hall_left_middle">
+        <pose>-1.30 0.30 1.25 0 0 0</pose>
+        <collision name="collision"><geometry><box><size>0.20 1.60 2.50</size></box></geometry></collision>
+        <visual name="visual"><geometry><box><size>0.20 1.60 2.50</size></box></geometry><material><ambient>0.86 0.86 0.82 1</ambient><diffuse>0.92 0.92 0.88 1</diffuse></material></visual>
+      </link>
+      <link name="hall_left_north">
+        <pose>-1.30 2.75 1.25 0 0 0</pose>
+        <collision name="collision"><geometry><box><size>0.20 1.50 2.50</size></box></geometry></collision>
+        <visual name="visual"><geometry><box><size>0.20 1.50 2.50</size></box></geometry><material><ambient>0.86 0.86 0.82 1</ambient><diffuse>0.92 0.92 0.88 1</diffuse></material></visual>
+      </link>
+      <link name="left_room_divider_west">
+        <pose>-3.45 0.90 1.25 0 0 0</pose>
+        <collision name="collision"><geometry><box><size>1.10 0.20 2.50</size></box></geometry></collision>
+        <visual name="visual"><geometry><box><size>1.10 0.20 2.50</size></box></geometry><material><ambient>0.86 0.86 0.82 1</ambient><diffuse>0.92 0.92 0.88 1</diffuse></material></visual>
+      </link>
+      <link name="left_room_divider_east">
+        <pose>-1.85 0.90 1.25 0 0 0</pose>
+        <collision name="collision"><geometry><box><size>1.10 0.20 2.50</size></box></geometry></collision>
+        <visual name="visual"><geometry><box><size>1.10 0.20 2.50</size></box></geometry><material><ambient>0.86 0.86 0.82 1</ambient><diffuse>0.92 0.92 0.88 1</diffuse></material></visual>
+      </link>
+
+      <!-- Right-hand rooms approximate the two stacked rooms visible in the reference. -->
+      <link name="right_room_divider_left">
+        <pose>0.05 0.80 1.25 0 0 0</pose>
+        <collision name="collision"><geometry><box><size>1.30 0.20 2.50</size></box></geometry></collision>
+        <visual name="visual"><geometry><box><size>1.30 0.20 2.50</size></box></geometry><material><ambient>0.86 0.86 0.82 1</ambient><diffuse>0.92 0.92 0.88 1</diffuse></material></visual>
+      </link>
+      <link name="right_room_divider_right">
+        <pose>2.90 0.80 1.25 0 0 0</pose>
+        <collision name="collision"><geometry><box><size>2.20 0.20 2.50</size></box></geometry></collision>
+        <visual name="visual"><geometry><box><size>2.20 0.20 2.50</size></box></geometry><material><ambient>0.86 0.86 0.82 1</ambient><diffuse>0.92 0.92 0.88 1</diffuse></material></visual>
+      </link>
+      <link name="upper_right_vertical_south">
+        <pose>1.80 1.35 1.25 0 0 0</pose>
+        <collision name="collision"><geometry><box><size>0.20 1.10 2.50</size></box></geometry></collision>
+        <visual name="visual"><geometry><box><size>0.20 1.10 2.50</size></box></geometry><material><ambient>0.86 0.86 0.82 1</ambient><diffuse>0.92 0.92 0.88 1</diffuse></material></visual>
+      </link>
+      <link name="upper_right_vertical_north">
+        <pose>1.80 3.05 1.25 0 0 0</pose>
+        <collision name="collision"><geometry><box><size>0.20 0.90 2.50</size></box></geometry></collision>
+        <visual name="visual"><geometry><box><size>0.20 0.90 2.50</size></box></geometry><material><ambient>0.86 0.86 0.82 1</ambient><diffuse>0.92 0.92 0.88 1</diffuse></material></visual>
+      </link>
+    </model>
+
+    <!-- Simple low furniture / lidar landmarks suggested by the reference image. -->
+    <model name="center_table">
+      <static>true</static><pose>-0.15 -0.55 0.38 0 0 0</pose>
+      <link name="link">
+        <collision name="collision"><geometry><box><size>0.85 0.55 0.75</size></box></geometry></collision>
+        <visual name="visual"><geometry><box><size>0.85 0.55 0.75</size></box></geometry><material><ambient>0.42 0.25 0.12 1</ambient><diffuse>0.55 0.34 0.17 1</diffuse></material></visual>
+      </link>
+    </model>
+    <model name="right_cabinet">
+      <static>true</static><pose>2.70 -1.10 0.45 0 0 0</pose>
+      <link name="link">
+        <collision name="collision"><geometry><box><size>0.80 0.45 0.90</size></box></geometry></collision>
+        <visual name="visual"><geometry><box><size>0.80 0.45 0.90</size></box></geometry><material><ambient>0.48 0.34 0.21 1</ambient><diffuse>0.60 0.43 0.27 1</diffuse></material></visual>
+      </link>
+    </model>
+  </world>
+</sdf>
